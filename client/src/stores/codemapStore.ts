@@ -1,6 +1,78 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
-import { CodeMap, CodeMapMeta, ViewMode, SuggestedTopic, PanelLayout } from 'codemap'
+import { CodeMap, CodeMapMeta, ViewMode, SuggestedTopic, PanelLayout, CodeRef, ModelTier } from 'codemap'
+
+// 代码导航相关类型
+interface ActiveFile {
+  path: string
+  content: string
+  language: string
+}
+
+interface NavigationTarget {
+  path: string
+  startLine: number
+  endLine: number
+  symbol?: string
+  sourceNodeId: string
+}
+
+export interface CodeAnnotation {
+  line: number
+  message: string
+  kind: 'info' | 'warn' | 'todo'
+  nodeId: string
+}
+
+// 语言推断函数
+const inferLanguage = (path: string): string => {
+  const ext = path.split('.').pop()?.toLowerCase() || ''
+  const langMap: Record<string, string> = {
+    'rs': 'rust',
+    'ts': 'typescript',
+    'tsx': 'typescript',
+    'js': 'javascript',
+    'jsx': 'javascript',
+    'json': 'json',
+    'md': 'markdown',
+    'py': 'python',
+    'java': 'java',
+    'go': 'go',
+    'css': 'css',
+    'scss': 'scss',
+    'html': 'html',
+    'vue': 'vue',
+    'sql': 'sql',
+    'yaml': 'yaml',
+    'yml': 'yaml',
+    'xml': 'xml',
+    'sh': 'shell',
+    'bash': 'shell',
+  }
+  return langMap[ext] || 'plaintext'
+}
+
+// 计算文件的批注
+const computeAnnotationsForFile = (codemap: CodeMap | null, filePath: string): CodeAnnotation[] => {
+  if (!codemap) return []
+
+  const annotations: CodeAnnotation[] = []
+
+  for (const node of codemap.nodes) {
+    for (const ref of node.code_refs) {
+      if (ref.path === filePath) {
+        annotations.push({
+          line: ref.start_line,
+          message: `[${node.title}] ${ref.symbol || `Lines ${ref.start_line}-${ref.end_line}`}`,
+          kind: 'info',
+          nodeId: node.node_id
+        })
+      }
+    }
+  }
+
+  return annotations
+}
 
 /**
  * CodeMap Store
@@ -12,22 +84,30 @@ interface CodeMapStore {
   selectedNodeId: string | null
   viewMode: ViewMode
   panelLayout: PanelLayout
-  
+
   // 历史记录
   history: CodeMapMeta[]
-  
+
   // UI 状态
   isLoading: boolean
   error: string | null
   showCreateDialog: boolean
   initialPrompt: string
-  
+
   // 建议主题
   suggestedTopics: SuggestedTopic[]
-  
+
   // 搜索
   searchQuery: string
-  
+
+  // 代码导航状态
+  activeFile: ActiveFile | null
+  navigationTarget: NavigationTarget | null
+  activeAnnotations: CodeAnnotation[]
+  showCodePanel: boolean
+  codePanelWidth: number
+  isNavigating: boolean
+
   // Actions
   setCurrentCodeMap: (codemap: CodeMap | null) => void
   setSelectedNodeId: (nodeId: string | null) => void
@@ -36,19 +116,28 @@ interface CodeMapStore {
   setHistory: (history: CodeMapMeta[]) => void
   addToHistory: (meta: CodeMapMeta) => void
   removeFromHistory: (id: string) => void
+  updateHistory: (id: string, updates: { title?: string; note?: string; tags?: string[] }) => Promise<void>
+  exportHistory: (id: string, format: 'json' | 'markdown' | 'html') => Promise<string>
+  importHistory: (filePath: string) => Promise<void>
   setIsLoading: (loading: boolean) => void
   setError: (error: string | null) => void
   setShowCreateDialog: (show: boolean) => void
   setInitialPrompt: (prompt: string) => void
   setSuggestedTopics: (topics: SuggestedTopic[]) => void
   setSearchQuery: (query: string) => void
-  
+
+  // 代码导航 Actions
+  navigateToCodeRef: (codeRef: CodeRef, nodeId: string) => Promise<void>
+  openFile: (path: string) => Promise<void>
+  closeCodePanel: () => void
+  setCodePanelWidth: (width: number) => void
+
   // Async Actions
   createCodeMap: (prompt: string, files: string[], projectRoot: string, modelTier: ModelTier) => Promise<void>
   loadCodeMapById: (id: string) => Promise<void>
   loadHistory: () => Promise<void>
   loadSuggestedTopics: () => Promise<void>
-  
+
   // Getters (computed)
   getSelectedNode: () => any
   getRootNodes: () => any[]
@@ -74,6 +163,14 @@ export const useCodeMapStore = create<CodeMapStore>()(
     initialPrompt: '',
     suggestedTopics: [],
     searchQuery: '',
+
+    // 代码导航初始状态
+    activeFile: null,
+    navigationTarget: null,
+    activeAnnotations: [],
+    showCodePanel: false,
+    codePanelWidth: 500,
+    isNavigating: false,
     
     // Actions
     setCurrentCodeMap: (codemap) => {
@@ -141,7 +238,78 @@ export const useCodeMapStore = create<CodeMapStore>()(
         console.error('Failed to delete codemap:', error)
       }
     },
-    
+
+    updateHistory: async (id, updates) => {
+      try {
+        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
+
+        const updatedMetaJson = await window.__TAURI__.core.invoke('update_codemap_meta', {
+          id,
+          projectRoot,
+          title: updates.title,
+          note: updates.note,
+          tags: updates.tags,
+        })
+
+        const updatedMeta: CodeMapMeta = JSON.parse(updatedMetaJson)
+
+        set((state) => {
+          const index = state.history.findIndex(h => h.id === id)
+          if (index >= 0) {
+            state.history[index] = updatedMeta
+          }
+        })
+      } catch (error) {
+        console.error('Failed to update codemap meta:', error)
+        set((state) => {
+          state.error = error instanceof Error ? error.message : String(error)
+        })
+      }
+    },
+
+    exportHistory: async (id, format) => {
+      try {
+        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
+
+        const exportPath = await window.__TAURI__.core.invoke('export_codemap', {
+          id,
+          format,
+          projectRoot,
+        })
+
+        return exportPath as string
+      } catch (error) {
+        console.error('Failed to export codemap:', error)
+        throw error
+      }
+    },
+
+    importHistory: async (filePath) => {
+      try {
+        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
+
+        const codemapJson = await window.__TAURI__.core.invoke('import_codemap', {
+          filePath,
+          projectRoot,
+        })
+
+        // Reload history to include the imported codemap
+        const historyJson = await window.__TAURI__.core.invoke('list_codemaps', {
+          projectRoot,
+        })
+
+        if (historyJson && historyJson.trim() !== '') {
+          const history: CodeMapMeta[] = JSON.parse(historyJson)
+          set((state) => {
+            state.history = history
+          })
+        }
+      } catch (error) {
+        console.error('Failed to import codemap:', error)
+        throw error
+      }
+    },
+
     setIsLoading: (loading) => {
       set((state) => {
         state.isLoading = loading
@@ -181,7 +349,112 @@ export const useCodeMapStore = create<CodeMapStore>()(
         state.searchQuery = query
       })
     },
-    
+
+    // 代码导航 Actions
+    navigateToCodeRef: async (codeRef, nodeId) => {
+      set((state) => {
+        state.isNavigating = true
+      })
+
+      try {
+        // 获取项目根目录
+        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
+
+        // 先设置根目录（如果还没设置）
+        try {
+          await window.__TAURI__.core.invoke('set_root_dir', { root: projectRoot })
+        } catch {
+          // 可能已经设置过，忽略错误
+        }
+
+        // 读取文件内容
+        const content = await window.__TAURI__.core.invoke('read_file', {
+          rel: codeRef.path
+        }) as string
+
+        const { currentCodeMap } = get()
+
+        set((state) => {
+          state.activeFile = {
+            path: codeRef.path,
+            content,
+            language: inferLanguage(codeRef.path)
+          }
+          state.navigationTarget = {
+            path: codeRef.path,
+            startLine: codeRef.start_line,
+            endLine: codeRef.end_line,
+            symbol: codeRef.symbol,
+            sourceNodeId: nodeId
+          }
+          state.activeAnnotations = computeAnnotationsForFile(currentCodeMap, codeRef.path)
+          state.showCodePanel = true
+          state.isNavigating = false
+        })
+      } catch (error) {
+        console.error('Failed to navigate to code ref:', error)
+        set((state) => {
+          state.error = `Failed to open file: ${codeRef.path}`
+          state.isNavigating = false
+        })
+      }
+    },
+
+    openFile: async (path) => {
+      set((state) => {
+        state.isNavigating = true
+      })
+
+      try {
+        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
+
+        try {
+          await window.__TAURI__.core.invoke('set_root_dir', { root: projectRoot })
+        } catch {
+          // 可能已经设置过，忽略错误
+        }
+
+        const content = await window.__TAURI__.core.invoke('read_file', {
+          rel: path
+        }) as string
+
+        const { currentCodeMap } = get()
+
+        set((state) => {
+          state.activeFile = {
+            path,
+            content,
+            language: inferLanguage(path)
+          }
+          state.navigationTarget = null
+          state.activeAnnotations = computeAnnotationsForFile(currentCodeMap, path)
+          state.showCodePanel = true
+          state.isNavigating = false
+        })
+      } catch (error) {
+        console.error('Failed to open file:', error)
+        set((state) => {
+          state.error = `Failed to open file: ${path}`
+          state.isNavigating = false
+        })
+      }
+    },
+
+    closeCodePanel: () => {
+      set((state) => {
+        state.showCodePanel = false
+        state.activeFile = null
+        state.navigationTarget = null
+        state.activeAnnotations = []
+      })
+    },
+
+    setCodePanelWidth: (width) => {
+      set((state) => {
+        state.codePanelWidth = width
+      })
+    },
+
     // Async Actions
     createCodeMap: async (prompt, files, projectRoot, modelTier) => {
       set((state) => {
@@ -238,7 +511,8 @@ export const useCodeMapStore = create<CodeMapStore>()(
           id: codemap.codemap_id,
           filename: `${codemap.codemap_id}.json`,
           title: codemap.title,
-          prompt: codemap.prompt,
+          description: codemap.title,
+          query: codemap.prompt,
           created_at: codemap.created_at,
           updated_at: new Date().toISOString(),
           tags: [modelTier],

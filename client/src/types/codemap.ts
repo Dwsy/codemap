@@ -114,7 +114,8 @@ export interface CodeMapMeta {
   id: string;
   filename: string;
   title: string;
-  prompt: string;
+  description: string;
+  query: string;
   created_at: string;
   updated_at: string;
   tags: string[];
