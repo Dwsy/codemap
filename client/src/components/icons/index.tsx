@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
-import { 
-  Map, 
-  Plus, 
-  Search, 
-  Settings, 
+import {
+  Map,
+  Plus,
+  Search,
+  Settings,
   HelpCircle,
   BookOpen,
   FileCode,
+  FileJson,
   Clock,
   Share2,
   Save,
@@ -40,7 +41,9 @@ import {
   ArrowDown,
   Sun,
   Moon,
-  Send
+  Send,
+  Edit,
+  Globe
 } from 'lucide-react'
 
 /**
@@ -55,13 +58,14 @@ export const Icon = {
   Search,
   Settings,
   HelpCircle,
-  
+
   // 文件图标
   FileCode,
   FileText,
+  FileJson,
   File,
   FolderOpen,
-  
+
   // 操作图标
   Save,
   Download,
@@ -72,8 +76,10 @@ export const Icon = {
   ExternalLink,
   RefreshCw,
   Send,
+  Edit,
   X,
-  
+  Globe,
+
   // 导航图标
   ChevronRight,
   ChevronDown,

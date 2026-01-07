@@ -5,58 +5,77 @@ import { Button } from '@components/ui/Button'
 import { Input } from '@components/ui/Input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/Tabs'
 import { ScrollArea } from '@components/ui/ScrollArea'
+import { HistoryEditDialog } from './HistoryEditDialog'
+import { open } from '@tauri-apps/plugin-dialog'
+import type { CodeMapMeta } from 'codemap'
 
 /**
  * Sidebar 组件
  * 包含历史记录和建议主题
  */
 const Sidebar: React.FC = () => {
-  const { 
-    history, 
-    suggestedTopics, 
-    searchQuery, 
+  const {
+    history,
+    suggestedTopics,
+    searchQuery,
     setSearchQuery,
     loadCodeMapById,
     removeFromHistory,
+    updateHistory,
+    exportHistory,
+    importHistory,
     setShowCreateDialog,
     setInitialPrompt
   } = useCodeMapStore()
-  
+
   const [activeTab, setActiveTab] = useState<'history' | 'suggestions'>('suggestions')
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
-  
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [selectedItem, setSelectedItem] = useState<CodeMapMeta | null>(null)
+  const [isImporting, setIsImporting] = useState(false)
+
   // 过滤历史记录和建议主题
   const filteredHistory = history.filter(item =>
     item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.prompt.toLowerCase().includes(searchQuery.toLowerCase())
+    item.query.toLowerCase().includes(searchQuery.toLowerCase())
   )
-  
+
   const filteredSuggestions = suggestedTopics.filter(topic =>
     topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     topic.description.toLowerCase().includes(searchQuery.toLowerCase())
   )
-  
+
   const handleSuggestedTopicClick = async (topic: import('codemap').SuggestedTopic) => {
-    console.log('=== handleSuggestedTopicClick called ===')
-    console.log('Topic:', topic)
-    console.log('Topic ID:', topic.id)
-    console.log('Topic Title:', topic.title)
-    console.log('Topic Description:', topic.description)
-    
     const fullPrompt = topic.title + ': ' + topic.description
-    console.log('Full Prompt:', fullPrompt)
-    
-    console.log('Calling setInitialPrompt...')
     setInitialPrompt(fullPrompt)
-    console.log('Called setInitialPrompt')
-    
-    console.log('Calling setShowCreateDialog...')
     setShowCreateDialog(true)
-    console.log('Called setShowCreateDialog')
-    
-    console.log('=== handleSuggestedTopicClick finished ===')
   }
-  
+
+  const handleEditClick = (item: CodeMapMeta) => {
+    setSelectedItem(item)
+    setEditDialogOpen(true)
+  }
+
+  const handleImport = async () => {
+    try {
+      setIsImporting(true)
+      const selected = await open({
+        multiple: false,
+        filters: [{
+          name: 'CodeMap',
+          extensions: ['json']
+        }]
+      })
+
+      if (selected && typeof selected === 'string') {
+        await importHistory(selected)
+      }
+    } catch (error) {
+      console.error('Failed to import:', error)
+    } finally {
+      setIsImporting(false)
+    }
+  }
+
   return (
     <aside className="w-80 border-r border-border flex flex-col bg-card">
       {/* Search */}
@@ -117,7 +136,29 @@ const Sidebar: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="history" className="flex-1 flex-1 m-0">
-          <ScrollArea className="h-[calc(100vh-8rem)]">
+          {/* Import Button */}
+          <div className="p-2 border-b border-border">
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full"
+              onClick={handleImport}
+              disabled={isImporting}
+            >
+              {isImporting ? (
+                <>
+                  <Icon.Loader2 size={14} className="mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Icon.Upload size={14} className="mr-2" />
+                  Import CodeMap
+                </>
+              )}
+            </Button>
+          </div>
+          <ScrollArea className="h-[calc(100vh-11rem)]">
             <div className="p-3 space-y-2">
               {filteredHistory.length === 0 ? (
                 <div className="text-center py-8 text-sm text-muted-foreground">
@@ -132,6 +173,7 @@ const Sidebar: React.FC = () => {
                     item={item}
                     onClick={() => loadCodeMapById(item.id)}
                     onDelete={() => removeFromHistory(item.id)}
+                    onEdit={() => handleEditClick(item)}
                   />
                 ))
               )}
@@ -139,6 +181,15 @@ const Sidebar: React.FC = () => {
           </ScrollArea>
         </TabsContent>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <HistoryEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        item={selectedItem}
+        onSave={updateHistory}
+        onExport={exportHistory}
+      />
     </aside>
   )
 }
@@ -185,17 +236,18 @@ interface HistoryItemProps {
   item: import('codemap').CodeMapMeta
   onClick: () => void
   onDelete: () => void
+  onEdit: () => void
 }
 
-const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete }) => {
-  const [showDelete, setShowDelete] = useState(false)
-  
+const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEdit }) => {
+  const [showActions, setShowActions] = useState(false)
+
   return (
     <div
       className="group relative p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer"
       onClick={onClick}
-      onMouseEnter={() => setShowDelete(true)}
-      onMouseLeave={() => setShowDelete(false)}
+      onMouseEnter={() => setShowActions(true)}
+      onMouseLeave={() => setShowActions(false)}
     >
       <div className="flex items-start gap-2">
         <div className="flex-shrink-0 mt-0.5">
@@ -206,7 +258,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete }) =>
             {item.title}
           </h4>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-            {item.prompt}
+            {item.query}
           </p>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-muted-foreground">
@@ -235,18 +287,31 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete }) =>
           </div>
         </div>
       </div>
-      
-      {/* Delete Button */}
-      {showDelete && (
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            onDelete()
-          }}
-          className="absolute top-2 right-2 p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
-        >
-          <Icon.Trash2 size={14} />
-        </button>
+
+      {/* Action Buttons */}
+      {showActions && (
+        <div className="absolute top-2 right-2 flex gap-1">
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit()
+            }}
+            className="p-1 rounded hover:bg-primary/10 hover:text-primary transition-colors"
+            title="Edit"
+          >
+            <Icon.Edit size={14} />
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              onDelete()
+            }}
+            className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
+            title="Delete"
+          >
+            <Icon.Trash2 size={14} />
+          </button>
+        </div>
       )}
     </div>
   )
