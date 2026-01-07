@@ -1,5 +1,12 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, forwardRef, useImperativeHandle } from 'react'
 import Editor from '@monaco-editor/react'
+
+export interface MonacoEditorRef {
+  jumpToLine: (lineNumber: number) => void
+  jumpToRange: (startLine: number, endLine: number) => void
+  setAnnotations: (annotations: Array<{ line: number; message: string; kind?: 'info' | 'warn' | 'todo' }>) => void
+  clearAnnotations: () => void
+}
 
 interface MonacoEditorProps {
   filePath?: string
@@ -7,82 +14,73 @@ interface MonacoEditorProps {
   onMount?: (editor: any, monaco: any) => void
 }
 
-export function MonacoEditor({ filePath, content, onMount }: MonacoEditorProps) {
-  const editorRef = useRef<any>(null)
-  const monacoRef = useRef<any>(null)
-  const highlightDecorationIds = useRef<string[]>([])
-  const annotationDecorationIds = useRef<string[]>([])
+export const MonacoEditor = forwardRef<MonacoEditorRef, MonacoEditorProps>(
+  ({ filePath, content, onMount }, ref) => {
+    const editorRef = useRef<any>(null)
+    const monacoRef = useRef<any>(null)
+    const highlightDecorationIds = useRef<string[]>([])
+    const annotationDecorationIds = useRef<string[]>([])
 
-  // 推断文件语言
-  const inferLanguage = (path: string): string => {
-    if (!path) return 'plaintext'
-    const ext = path.split('.').pop()?.toLowerCase()
-    const langMap: Record<string, string> = {
-      rs: 'rust',
-      ts: 'typescript',
-      tsx: 'typescript',
-      js: 'javascript',
-      jsx: 'javascript',
-      json: 'json',
-      toml: 'toml',
-      md: 'markdown',
-      yaml: 'yaml',
-      yml: 'yaml',
-      sh: 'shell',
-      py: 'python',
-      java: 'java',
-      go: 'go',
-      cpp: 'cpp',
-      c: 'c',
-      h: 'c',
-      hpp: 'cpp',
-      css: 'css',
-      scss: 'scss',
-      html: 'html',
-      xml: 'xml',
-      sql: 'sql',
-    }
-    return langMap[ext || ''] || 'plaintext'
-  }
-
-  const handleEditorMount = (editor: any, monaco: any) => {
-    editorRef.current = editor
-    monacoRef.current = monaco
-    
-    // 自定义样式
-    monaco.editor.defineTheme('custom-theme', {
-      base: 'vs',
-      inherit: true,
-      rules: [
-        { token: 'comment', foreground: '6A9955' },
-        { token: 'keyword', foreground: '0000FF' },
-        { token: 'string', foreground: 'A31515' },
-      ],
-      colors: {
-        'editor.background': '#FFFFFF',
+    // 推断文件语言
+    const inferLanguage = (path: string): string => {
+      if (!path) return 'plaintext'
+      const ext = path.split('.').pop()?.toLowerCase()
+      const langMap: Record<string, string> = {
+        rs: 'rust',
+        ts: 'typescript',
+        tsx: 'typescript',
+        js: 'javascript',
+        jsx: 'javascript',
+        json: 'json',
+        toml: 'toml',
+        md: 'markdown',
+        yaml: 'yaml',
+        yml: 'yaml',
+        sh: 'shell',
+        py: 'python',
+        java: 'java',
+        go: 'go',
+        cpp: 'cpp',
+        c: 'c',
+        h: 'c',
+        hpp: 'cpp',
+        css: 'css',
+        scss: 'scss',
+        html: 'html',
+        xml: 'xml',
+        sql: 'sql',
       }
-    })
-    
-    monaco.editor.setTheme('custom-theme')
+      return langMap[ext || ''] || 'plaintext'
+    }
 
-    // 创建方法对象并传递给父组件
-    const methods = {
+    // 暴露方法给父组件
+    useImperativeHandle(ref, () => ({
       jumpToLine: (lineNumber: number) => {
         if (!editorRef.current || !monacoRef.current) return
         editorRef.current.revealLineInCenter(lineNumber)
         editorRef.current.setPosition({ lineNumber, column: 1 })
 
-        // 清除旧的高亮
         highlightDecorationIds.current = editorRef.current.deltaDecorations(
           highlightDecorationIds.current,
-          []
-        )
-
-        // 添加新的高亮
-        highlightDecorationIds.current = editorRef.current.deltaDecorations(
-          [],
           [{
             range: new monacoRef.current.Range(lineNumber, 1, lineNumber, 1),
+            options: {
+              isWholeLine: true,
+              className: 'line-highlight',
+              glyphMarginClassName: 'line-highlight-glyph',
+            }
+          }]
+        )
+      },
+      jumpToRange: (startLine: number, endLine: number) => {
+        if (!editorRef.current || !monacoRef.current) return
+        editorRef.current.revealLineInCenter(startLine)
+        editorRef.current.setPosition({ lineNumber: startLine, column: 1 })
+
+        highlightDecorationIds.current = editorRef.current.deltaDecorations(
+          highlightDecorationIds.current,
+          [{
+            range: new monacoRef.current.Range(startLine, 1, endLine, 1),
             options: {
               isWholeLine: true,
               className: 'line-highlight',
@@ -98,15 +96,8 @@ export function MonacoEditor({ filePath, content, onMount }: MonacoEditorProps) 
       }>) => {
         if (!editorRef.current || !monacoRef.current) return
 
-        // 清除旧的批注
         annotationDecorationIds.current = editorRef.current.deltaDecorations(
           annotationDecorationIds.current,
-          []
-        )
-
-        // 添加新的批注
-        annotationDecorationIds.current = editorRef.current.deltaDecorations(
-          [],
           annotations.map(anno => ({
             range: new monacoRef.current.Range(anno.line, 1, anno.line, 1),
             options: {
@@ -118,13 +109,80 @@ export function MonacoEditor({ filePath, content, onMount }: MonacoEditorProps) 
             }
           }))
         )
+      },
+      clearAnnotations: () => {
+        if (!editorRef.current) return
+        annotationDecorationIds.current = editorRef.current.deltaDecorations(
+          annotationDecorationIds.current,
+          []
+        )
+      }
+    }), [])
+
+    const handleEditorMount = (editor: any, monaco: any) => {
+      editorRef.current = editor
+      monacoRef.current = monaco
+
+      monaco.editor.defineTheme('custom-theme', {
+        base: 'vs',
+        inherit: true,
+        rules: [
+          { token: 'comment', foreground: '6A9955' },
+          { token: 'keyword', foreground: '0000FF' },
+          { token: 'string', foreground: 'A31515' },
+        ],
+        colors: {
+          'editor.background': '#FFFFFF',
+        }
+      })
+
+      monaco.editor.setTheme('custom-theme')
+
+      // 保留 onMount 回调兼容性
+      if (onMount) {
+        const methods = {
+          jumpToLine: (lineNumber: number) => {
+            if (!editorRef.current || !monacoRef.current) return
+            editorRef.current.revealLineInCenter(lineNumber)
+            editorRef.current.setPosition({ lineNumber, column: 1 })
+
+            highlightDecorationIds.current = editorRef.current.deltaDecorations(
+              highlightDecorationIds.current,
+              [{
+                range: new monacoRef.current.Range(lineNumber, 1, lineNumber, 1),
+                options: {
+                  isWholeLine: true,
+                  className: 'line-highlight',
+                  glyphMarginClassName: 'line-highlight-glyph',
+                }
+              }]
+            )
+          },
+          setAnnotations: (annotations: Array<{
+            line: number
+            message: string
+            kind?: 'info' | 'warn' | 'todo'
+          }>) => {
+            if (!editorRef.current || !monacoRef.current) return
+
+            annotationDecorationIds.current = editorRef.current.deltaDecorations(
+              annotationDecorationIds.current,
+              annotations.map(anno => ({
+                range: new monacoRef.current.Range(anno.line, 1, anno.line, 1),
+                options: {
+                  isWholeLine: true,
+                  className: `anno-line anno-${anno.kind || 'info'}`,
+                  glyphMarginClassName: `anno-glyph anno-${anno.kind || 'info'}`,
+                  glyphMarginHoverMessage: { value: anno.message },
+                  hoverMessage: { value: anno.message },
+                }
+              }))
+            )
+          }
+        }
+        onMount(editor, methods)
       }
     }
-
-    if (onMount) {
-      onMount(editor, methods)
-    }
-  }
 
   return (
     <>
@@ -198,4 +256,6 @@ export function MonacoEditor({ filePath, content, onMount }: MonacoEditorProps) 
       `}</style>
     </>
   )
-}
+})
+
+MonacoEditor.displayName = 'MonacoEditor'
