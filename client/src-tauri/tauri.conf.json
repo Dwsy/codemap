@@ -27,7 +27,7 @@
     "withGlobalTauri": true
   },
   "bundle": {
-    "active": false,
+    "active": true,
     "targets": "all",
     "icon": [
       "icons/32x32.png",
@@ -36,6 +36,18 @@
       "icons/256x256.png",
       "icons/512x512.png",
       "icons/1024x1024.png"
-    ]
+    ],
+    "category": "Developer Tool",
+    "shortDescription": "AI-powered code visualization tool",
+    "longDescription": "CodeMap transforms complex code execution flows into clear, step-by-step tracing paths using AI analysis.",
+    "macOS": {
+      "frameworks": [],
+      "minimumSystemVersion": "10.13"
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
   }
 }
