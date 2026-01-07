@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { ScrollArea } from '@components/ui/ScrollArea'
 import { Input } from '@components/ui/Input'
 import ReactMarkdown from 'react-markdown'
+import type { CodeRef } from 'codemap'
 
 /**
  * NodeDetails 组件
@@ -103,10 +104,11 @@ const NodeDetails: React.FC = () => {
                 Code References ({selectedNode.code_refs.length})
               </h4>
               <div className="space-y-2">
-                {selectedNode.code_refs.map((ref: import('codemap').CodeRef, index: number) => (
+                {selectedNode.code_refs.map((ref: CodeRef, index: number) => (
                   <CodeRefItem
                     key={index}
                     codeRef={ref}
+                    nodeId={selectedNode.node_id}
                   />
                 ))}
               </div>
@@ -249,16 +251,23 @@ const NodeDetails: React.FC = () => {
  * CodeRef 项
  */
 interface CodeRefItemProps {
-  codeRef: import('codemap').CodeRef
+  codeRef: CodeRef
+  nodeId: string
 }
 
-const CodeRefItem: React.FC<CodeRefItemProps> = ({ codeRef }) => {
+const CodeRefItem: React.FC<CodeRefItemProps> = ({ codeRef, nodeId }) => {
   const FileIcon = getFileIcon(codeRef.path.split('.').pop() || '')
-  
+  const { navigateToCodeRef, isNavigating } = useCodeMapStore()
+
+  const handleClick = async () => {
+    await navigateToCodeRef(codeRef, nodeId)
+  }
+
   return (
     <button
-      className="w-full text-left p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group"
-      onClick={() => handleCodeRefClick(codeRef)}
+      className="w-full text-left p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors group disabled:opacity-50"
+      onClick={handleClick}
+      disabled={isNavigating}
     >
       <div className="flex items-start gap-2">
         <FileIcon size={16} className="mt-0.5 text-muted-foreground flex-shrink-0" />
@@ -277,18 +286,17 @@ const CodeRefItem: React.FC<CodeRefItemProps> = ({ codeRef }) => {
             Lines {codeRef.start_line} - {codeRef.end_line}
           </div>
         </div>
-        <Icon.ExternalLink
-          size={14}
-          className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-        />
+        {isNavigating ? (
+          <Icon.Loader2 size={14} className="flex-shrink-0 animate-spin text-muted-foreground" />
+        ) : (
+          <Icon.ExternalLink
+            size={14}
+            className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          />
+        )}
       </div>
     </button>
   )
-}
-
-const handleCodeRefClick = (codeRef: import('codemap').CodeRef) => {
-  // TODO: 实现代码跳转
-  console.log('Jump to code:', codeRef)
 }
 
 export default NodeDetails
