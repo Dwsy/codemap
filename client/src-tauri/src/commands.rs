@@ -83,10 +83,28 @@ pub async fn delete_codemap(
 ) -> Result<(), String> {
     let storage = Storage::new(&project_root)
         .map_err(|e| e.to_string())?;
-    
+
     storage
         .delete_codemap(&id)
         .map_err(|e| e.to_string())
+}
+
+#[command]
+pub async fn update_codemap_meta(
+    id: String,
+    project_root: String,
+    title: Option<String>,
+    note: Option<String>,
+    tags: Option<Vec<String>>,
+) -> Result<String, String> {
+    let storage = Storage::new(&project_root)
+        .map_err(|e| e.to_string())?;
+
+    let updated_meta = storage
+        .update_codemap_meta(&id, title, note, tags)
+        .map_err(|e| e.to_string())?;
+
+    serde_json::to_string(&updated_meta).map_err(|e| e.to_string())
 }
 
 #[command]

@@ -97,18 +97,49 @@ impl Storage {
         let codemap_meta = index.codemaps.iter()
             .find(|c| c.id == id)
             .context("CodeMap not found")?;
-        
+
         // Delete file
         let filepath = self.codemap_dir.join("codemaps").join(&codemap_meta.filename);
         if filepath.exists() {
             fs::remove_file(filepath)?;
         }
-        
+
         // Remove from index
         index.codemaps.retain(|c| c.id != id);
         self.save_index(&index)?;
-        
+
         Ok(())
+    }
+
+    pub fn update_codemap_meta(
+        &self,
+        id: &str,
+        title: Option<String>,
+        note: Option<String>,
+        tags: Option<Vec<String>>,
+    ) -> Result<CodeMapMeta> {
+        let mut index = self.load_index()?;
+
+        let meta = index.codemaps.iter_mut()
+            .find(|c| c.id == id)
+            .context("CodeMap not found")?;
+
+        // Update fields if provided
+        if let Some(new_title) = title {
+            meta.title = new_title;
+        }
+        if let Some(new_note) = note {
+            meta.note = Some(new_note);
+        }
+        if let Some(new_tags) = tags {
+            meta.tags = new_tags;
+        }
+        meta.updated_at = Utc::now();
+
+        let updated_meta = meta.clone();
+        self.save_index(&index)?;
+
+        Ok(updated_meta)
     }
     
     pub fn export_codemap(&self, id: &str, format: &str) -> Result<String> {

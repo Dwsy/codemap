@@ -22,6 +22,7 @@ fn main() {
             list_codemaps,
             load_codemap,
             delete_codemap,
+            update_codemap_meta,
             export_codemap,
             import_codemap,
             get_project_structure,
