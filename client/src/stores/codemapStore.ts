@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { CodeMap, CodeMapMeta, ViewMode, SuggestedTopic, PanelLayout, CodeRef, ModelTier } from 'codemap'
+import { invokeWithRetry, RetryConfig } from '@utils/retry'
 
 // 代码导航相关类型
 interface ActiveFile {
@@ -536,24 +537,25 @@ export const useCodeMapStore = create<CodeMapStore>()(
         state.isLoading = true
         state.error = null
       })
-      
+
       try {
-        // 获取当前工作目录作为项目根目录
-        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
-        
-        const codemapJson = await window.__TAURI__.core.invoke('load_codemap', {
-          id,
-          projectRoot: projectRoot,
-        })
-        
+        const projectRoot = await invokeWithRetry('get_project_root')
+
+        const codemapJson = await invokeWithRetry(
+          'load_codemap',
+          { id, projectRoot: projectRoot },
+          RetryConfig.storage
+        )
+
         const codemap: CodeMap = JSON.parse(codemapJson)
-        
+
         set((state) => {
           state.currentCodeMap = codemap
           state.isLoading = false
         })
-        
+
       } catch (error) {
+        console.error('Failed to load codemap:', error)
         set((state) => {
           state.error = error instanceof Error ? error.message : String(error)
           state.isLoading = false
@@ -563,13 +565,14 @@ export const useCodeMapStore = create<CodeMapStore>()(
     
     loadHistory: async () => {
       try {
-        // 获取当前工作目录作为项目根目录
-        const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
-        
-        const historyJson = await window.__TAURI__.core.invoke('list_codemaps', {
-          projectRoot: projectRoot,
-        })
-        
+        const projectRoot = await invokeWithRetry('get_project_root')
+
+        const historyJson = await invokeWithRetry(
+          'list_codemaps',
+          { projectRoot },
+          RetryConfig.storage
+        )
+
         // 检查返回的 JSON 是否有效
         if (!historyJson || historyJson.trim() === '') {
           set((state) => {
@@ -577,14 +580,15 @@ export const useCodeMapStore = create<CodeMapStore>()(
           })
           return
         }
-        
+
         const history: CodeMapMeta[] = JSON.parse(historyJson)
-        
+
         set((state) => {
           state.history = history
         })
-        
+
       } catch (error) {
+        console.error('Failed to load history:', error)
         // 如果加载失败，使用空历史
         set((state) => {
           state.history = []
