@@ -317,6 +317,28 @@ impl Edge {
     }
 }
 
+/// CodeMap索引（用于快速查询）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodeMapIndex {
+    pub version: u32,
+    pub project_root: String,
+    pub codemaps: Vec<CodeMapMeta>,
+}
+
+/// CodeMap元数据（用于列表展示）
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CodeMapMeta {
+    pub id: String,  // codemap_id
+    pub filename: String,
+    pub title: String,
+    pub description: String,  // prompt
+    pub query: String,  // 同prompt
+    pub created_at: DateTime<Utc>,
+    pub updated_at: DateTime<Utc>,
+    pub tags: Vec<String>,
+    pub note: Option<String>,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
