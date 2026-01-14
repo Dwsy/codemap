@@ -1,4 +1,4 @@
-use crate::codemap_v2::{CodeMap, CodeMapIndex, CodeMapMeta, Node, Edge, CodeRef};
+use crate::codemap_v2::{CodeMap, CodeMapIndex, CodeMapMeta};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::PathBuf;

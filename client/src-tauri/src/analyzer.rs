@@ -1,8 +1,7 @@
-use crate::codemap_v2::{CodeMap, Node, Edge, CodeRef, TraceGuide, EdgeType, ModelTier, RepoInfo, SnapshotMode, GenerationConfig, Budgets};
+use crate::codemap_v2::{CodeMap, Node, Edge, CodeRef, TraceGuide, EdgeType, ModelTier};
 use anyhow::{Context, Result};
 use std::fs;
 use std::path::Path;
-use chrono::Utc;
 
 pub struct Analyzer {
     project_root: String,
