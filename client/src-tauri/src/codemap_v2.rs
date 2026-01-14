@@ -70,7 +70,7 @@ pub struct GenerationConfig {
 }
 
 /// 模型档位
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ModelTier {
     /// 快速（低成本、快速、质量一般）

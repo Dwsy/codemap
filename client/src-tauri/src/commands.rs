@@ -26,7 +26,7 @@ pub async fn analyze_code(
     let analyzer = Analyzer::new(project_root.clone());
     let tier = match model_tier.as_deref() {
         Some("smart") => ModelTier::Smart,
-        Some("fast") | _ => ModelTier::Fast,
+        _ => ModelTier::Fast,
     };
     analyzer
         .analyze(files, query, tier)
