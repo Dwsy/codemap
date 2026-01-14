@@ -1,74 +1,76 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { FileSystemTree } from './FileSystemTree'
-import { MonacoEditor } from './MonacoEditor'
-import { Button } from './ui/Button'
-import { invoke } from '@tauri-apps/api/core'
-import { Home, FileText, X } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react';
+import { FileSystemTree } from './FileSystemTree';
+import { MonacoEditor } from './MonacoEditor';
+import { Button } from './ui/Button';
+import { invoke } from '@tauri-apps/api/core';
+import { Home, FileText, X } from 'lucide-react';
 
 interface EditorRef {
-  jumpToLine: (line: number) => void
-  setAnnotations: (annotations: Array<{ line: number; message: string; kind?: 'info' | 'warn' | 'todo' }>) => void
+  jumpToLine: (line: number) => void;
+  setAnnotations: (
+    annotations: Array<{ line: number; message: string; kind?: 'info' | 'warn' | 'todo' }>
+  ) => void;
 }
 
 export function CodeBrowser() {
-  const [currentFilePath, setCurrentFilePath] = useState<string>('')
-  const [fileContent, setFileContent] = useState<string>('')
-  const [editorRef, setEditorRef] = useState<EditorRef | null>(null)
-  const [isRootSet, setIsRootSet] = useState<boolean>(false)
+  const [currentFilePath, setCurrentFilePath] = useState<string>('');
+  const [fileContent, setFileContent] = useState<string>('');
+  const [editorRef, setEditorRef] = useState<EditorRef | null>(null);
+  const [isRootSet, setIsRootSet] = useState<boolean>(false);
 
   // 设置默认根目录
   useEffect(() => {
     const setDefaultRoot = async () => {
       try {
-        const defaultRoot = '/Users/dengwenyu/.pi/agent/skills/codemap'
-        await invoke('set_root_dir', { root: defaultRoot })
-        setIsRootSet(true)
-        console.log('Default root directory set:', defaultRoot)
+        const defaultRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
+        await invoke('set_root_dir', { root: defaultRoot });
+        setIsRootSet(true);
+        console.log('Default root directory set:', defaultRoot);
       } catch (error) {
-        console.error('Failed to set default root directory:', error)
+        console.error('Failed to set default root directory:', error);
       }
-    }
-    setDefaultRoot()
-  }, [])
+    };
+    setDefaultRoot();
+  }, []);
 
   const handleSelectRootDir = async () => {
     try {
       // 使用默认目录
-      const defaultRoot = '/Users/dengwenyu/.pi/agent/skills/codemap'
-      await invoke('set_root_dir', { root: defaultRoot })
-      setIsRootSet(true)
-      console.log('Root directory set:', defaultRoot)
+      const defaultRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
+      await invoke('set_root_dir', { root: defaultRoot });
+      setIsRootSet(true);
+      console.log('Root directory set:', defaultRoot);
     } catch (error) {
-      console.error('Failed to set directory:', error)
-      alert('Failed to set directory: ' + error)
+      console.error('Failed to set directory:', error);
+      alert('Failed to set directory: ' + error);
     }
-  }
+  };
 
   const handleFileSelect = async (relPath: string) => {
     try {
-      const content = await invoke<string>('read_file', { rel: relPath })
-      setCurrentFilePath(relPath)
-      setFileContent(content)
-      console.log('Opened file:', relPath)
+      const content = await invoke<string>('read_file', { rel: relPath });
+      setCurrentFilePath(relPath);
+      setFileContent(content);
+      console.log('Opened file:', relPath);
     } catch (error) {
-      console.error('Failed to read file:', error)
-      alert('Failed to read file: ' + error)
+      console.error('Failed to read file:', error);
+      alert('Failed to read file: ' + error);
     }
-  }
+  };
 
   const handleEditorMount = (editor: any, monacoWithMethods: any) => {
-    setEditorRef(monacoWithMethods)
-    console.log('Editor mounted')
-  }
+    setEditorRef(monacoWithMethods);
+    console.log('Editor mounted');
+  };
 
   // 测试跳转功能
   const testJumpToLine = () => {
     if (editorRef) {
-      editorRef.jumpToLine(10)
+      editorRef.jumpToLine(10);
     } else {
-      alert('Editor not ready. Please open a file first.')
+      alert('Editor not ready. Please open a file first.');
     }
-  }
+  };
 
   // 测试批注功能
   const testAnnotations = () => {
@@ -77,11 +79,11 @@ export function CodeBrowser() {
         { line: 5, message: 'This is an important entry point', kind: 'info' },
         { line: 10, message: 'TODO: Refactor this function', kind: 'todo' },
         { line: 15, message: 'Warning: Potential performance issue', kind: 'warn' },
-      ])
+      ]);
     } else {
-      alert('Editor not ready. Please open a file first.')
+      alert('Editor not ready. Please open a file first.');
     }
-  }
+  };
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -91,14 +93,10 @@ export function CodeBrowser() {
           <Home size={20} className="text-gray-600" />
           <h1 className="text-lg font-semibold text-gray-900">Code Browser</h1>
         </div>
-        
+
         <div className="flex items-center gap-2">
-          {!isRootSet && (
-            <Button onClick={handleSelectRootDir}>
-              Select Root Directory
-            </Button>
-          )}
-          
+          {!isRootSet && <Button onClick={handleSelectRootDir}>Select Root Directory</Button>}
+
           {/* Test buttons - can be removed in production */}
           {currentFilePath && editorRef && (
             <>
@@ -130,16 +128,14 @@ export function CodeBrowser() {
             <div className="flex items-center justify-between px-4 py-2 border-b border-gray-200 bg-gray-50">
               <div className="flex items-center gap-2 overflow-hidden">
                 <FileText size={16} className="text-gray-500 flex-shrink-0" />
-                <span className="text-sm text-gray-700 truncate">
-                  {currentFilePath}
-                </span>
+                <span className="text-sm text-gray-700 truncate">{currentFilePath}</span>
               </div>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  setCurrentFilePath('')
-                  setFileContent('')
+                  setCurrentFilePath('');
+                  setFileContent('');
                 }}
               >
                 <X size={16} />
@@ -168,5 +164,5 @@ export function CodeBrowser() {
         </main>
       </div>
     </div>
-  )
+  );
 }

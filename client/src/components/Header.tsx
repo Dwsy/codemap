@@ -1,41 +1,47 @@
-import React, { useState } from 'react'
-import { useCodeMapStore } from '@stores/codemapStore'
-import { Icon, getModelTierIcon } from '@components/icons'
-import { ModelTier, ViewMode } from 'codemap'
-import { Button } from '@components/ui/Button'
-import { Input } from '@components/ui/Input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/Select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@components/ui/Dialog'
+import React, { useState } from 'react';
+import { useCodeMapStore } from '@stores/codemapStore';
+import { Icon, getModelTierIcon } from '@components/icons';
+import { ModelTier, ViewMode } from 'codemap';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@components/ui/Select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@components/ui/Dialog';
 
 /**
  * Header 组件
  * 包含 Logo、新建按钮、模型档位选择、设置等
  */
 const Header: React.FC = () => {
-  const { currentCodeMap, viewMode, setViewMode, setShowCreateDialog } = useCodeMapStore()
-  const [showSettings, setShowSettings] = useState(false)
-  const [showExportDialog, setShowExportDialog] = useState(false)
-  const [showHelpDialog, setShowHelpDialog] = useState(false)
-  
+  const { currentCodeMap, viewMode, setViewMode, setShowCreateDialog } = useCodeMapStore();
+  const [showSettings, setShowSettings] = useState(false);
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showHelpDialog, setShowHelpDialog] = useState(false);
+
   const handleExport = async (format: 'json' | 'markdown' | 'html') => {
     try {
-      if (!currentCodeMap) return
-      
-      const projectRoot = await window.__TAURI__.core.invoke('get_project_root')
+      if (!currentCodeMap) return;
+
+      const projectRoot = await window.__TAURI__.core.invoke('get_project_root');
       const exportPath = await window.__TAURI__.core.invoke('export_codemap', {
         id: currentCodeMap.codemap_id,
         format: format,
         projectRoot: projectRoot,
-      })
-      
-      alert(`Exported to: ${exportPath}`)
-      setShowExportDialog(false)
+      });
+
+      alert(`Exported to: ${exportPath}`);
+      setShowExportDialog(false);
     } catch (error) {
-      console.error('Failed to export:', error)
-      alert('Failed to export codemap')
+      console.error('Failed to export:', error);
+      alert('Failed to export codemap');
     }
-  }
-  
+  };
+
   return (
     <header className="h-14 border-b border-border flex items-center justify-between px-4 bg-card">
       {/* Left: Logo & Title */}
@@ -44,26 +50,22 @@ const Header: React.FC = () => {
           <Icon.Logo size={24} className="text-primary" />
           <h1 className="text-lg font-semibold">CodeMap</h1>
         </div>
-        
+
         {currentCodeMap && (
           <>
             <div className="h-6 w-px bg-border" />
-            <span className="text-sm text-muted-foreground">
-              {currentCodeMap.title}
-            </span>
+            <span className="text-sm text-muted-foreground">{currentCodeMap.title}</span>
           </>
         )}
       </div>
-      
+
       {/* Center: Model Tier & View Mode */}
       {currentCodeMap && (
         <div className="flex items-center gap-4">
           {/* Model Tier Selector */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground">Model:</span>
-            <Select 
-              value={currentCodeMap?.generation?.model_tier || ModelTier.Fast}
-            >
+            <Select value={currentCodeMap?.generation?.model_tier || ModelTier.Fast}>
               <SelectTrigger className="h-8 w-32 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -83,7 +85,7 @@ const Header: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-          
+
           {/* View Mode Toggle */}
           <div className="flex items-center bg-muted rounded-lg p-1">
             <Button
@@ -107,28 +109,26 @@ const Header: React.FC = () => {
           </div>
         </div>
       )}
-      
+
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        {!currentCodeMap && (
-          <NewCodeMapButton />
-        )}
-        
+        {!currentCodeMap && <NewCodeMapButton />}
+
         {currentCodeMap && (
           <Button variant="ghost" size="sm" onClick={() => setShowExportDialog(true)}>
             <Icon.Download size={16} />
           </Button>
         )}
-        
+
         <Button variant="ghost" size="sm" onClick={() => setShowSettings(true)}>
           <Icon.Settings size={16} />
         </Button>
-        
+
         <Button variant="ghost" size="sm" onClick={() => setShowHelpDialog(true)}>
           <Icon.HelpCircle size={16} />
         </Button>
       </div>
-      
+
       {/* Export Dialog */}
       <Dialog open={showExportDialog} onOpenChange={setShowExportDialog}>
         <DialogContent>
@@ -163,7 +163,7 @@ const Header: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Settings Dialog */}
       <Dialog open={showSettings} onOpenChange={setShowSettings}>
         <DialogContent>
@@ -197,7 +197,7 @@ const Header: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
-      
+
       {/* Help Dialog */}
       <Dialog open={showHelpDialog} onOpenChange={setShowHelpDialog}>
         <DialogContent className="max-w-2xl">
@@ -208,56 +208,68 @@ const Header: React.FC = () => {
             <section>
               <h4 className="font-semibold mb-2">Getting Started</h4>
               <p className="text-sm text-muted-foreground">
-                1. Click "New CodeMap" to create a new code map<br/>
-                2. Enter a prompt describing what you want to understand<br/>
-                3. Select the analysis mode (Fast or Smart)<br/>
+                1. Click "New CodeMap" to create a new code map
+                <br />
+                2. Enter a prompt describing what you want to understand
+                <br />
+                3. Select the analysis mode (Fast or Smart)
+                <br />
                 4. Click "Generate CodeMap" to analyze your code
               </p>
             </section>
-            
+
             <section>
               <h4 className="font-semibold mb-2">Keyboard Shortcuts</h4>
               <div className="text-sm text-muted-foreground space-y-1">
-                <p><kbd className="px-1 py-0.5 bg-muted rounded">Cmd/Ctrl + K</kbd> - Open create dialog</p>
-                <p><kbd className="px-1 py-0.5 bg-muted rounded">Esc</kbd> - Close dialogs</p>
-                <p><kbd className="px-1 py-0.5 bg-muted rounded">Cmd/Ctrl + /</kbd> - Toggle help</p>
+                <p>
+                  <kbd className="px-1 py-0.5 bg-muted rounded">Cmd/Ctrl + K</kbd> - Open create
+                  dialog
+                </p>
+                <p>
+                  <kbd className="px-1 py-0.5 bg-muted rounded">Esc</kbd> - Close dialogs
+                </p>
+                <p>
+                  <kbd className="px-1 py-0.5 bg-muted rounded">Cmd/Ctrl + /</kbd> - Toggle help
+                </p>
               </div>
             </section>
-            
+
             <section>
               <h4 className="font-semibold mb-2">Tips</h4>
               <p className="text-sm text-muted-foreground">
-                - Use specific prompts for better results<br/>
-                - Switch between Tree and Graph views for different perspectives<br/>
-                - Click on nodes to see detailed information<br/>
-                - Export your code maps to share with your team
+                - Use specific prompts for better results
+                <br />
+                - Switch between Tree and Graph views for different perspectives
+                <br />
+                - Click on nodes to see detailed information
+                <br />- Export your code maps to share with your team
               </p>
             </section>
           </div>
         </DialogContent>
       </Dialog>
     </header>
-  )
-}
+  );
+};
 
 /**
  * 新建 CodeMap 按钮
  */
 const NewCodeMapButton: React.FC = () => {
-  const { setIsLoading } = useCodeMapStore()
-  
+  const { setIsLoading } = useCodeMapStore();
+
   const handleCreate = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     // TODO: 实现 CodeMap 创建逻辑
-    setTimeout(() => setIsLoading(false), 1000)
-  }
-  
+    setTimeout(() => setIsLoading(false), 1000);
+  };
+
   return (
     <Button size="sm" onClick={handleCreate}>
       <Icon.Plus size={16} className="mr-2" />
       New CodeMap
     </Button>
-  )
-}
+  );
+};
 
-export default Header
+export default Header;

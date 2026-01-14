@@ -2,18 +2,15 @@
  * Retry utility with exponential backoff
  */
 export interface RetryOptions {
-  maxAttempts?: number
-  initialDelay?: number
-  maxDelay?: number
-  backoffFactor?: number
-  shouldRetry?: (error: Error) => boolean
-  onRetry?: (attempt: number, error: Error) => void
+  maxAttempts?: number;
+  initialDelay?: number;
+  maxDelay?: number;
+  backoffFactor?: number;
+  shouldRetry?: (error: Error) => boolean;
+  onRetry?: (attempt: number, error: Error) => void;
 }
 
-export async function retry<T>(
-  fn: () => Promise<T>,
-  options: RetryOptions = {}
-): Promise<T> {
+export async function retry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
   const {
     maxAttempts = 3,
     initialDelay = 1000,
@@ -21,42 +18,39 @@ export async function retry<T>(
     backoffFactor = 2,
     shouldRetry = () => true,
     onRetry,
-  } = options
+  } = options;
 
-  let lastError: Error | null = null
-  let attempt = 0
+  let lastError: Error | null = null;
+  let attempt = 0;
 
   while (attempt < maxAttempts) {
-    attempt++
+    attempt++;
 
     try {
-      return await fn()
+      return await fn();
     } catch (error) {
-      lastError = error instanceof Error ? error : new Error(String(error))
+      lastError = error instanceof Error ? error : new Error(String(error));
 
       if (attempt >= maxAttempts || !shouldRetry(lastError)) {
-        throw lastError
+        throw lastError;
       }
 
-      onRetry?.(attempt, lastError)
+      onRetry?.(attempt, lastError);
 
       // Exponential backoff with jitter
-      const delay = Math.min(
-        initialDelay * Math.pow(backoffFactor, attempt - 1),
-        maxDelay
-      )
-      const jitter = delay * 0.1 * Math.random()
-      const effectiveDelay = delay + jitter
+      const delay = Math.min(initialDelay * Math.pow(backoffFactor, attempt - 1), maxDelay);
+      const jitter = delay * 0.1 * Math.random();
+      const effectiveDelay = delay + jitter;
 
-      await sleep(effectiveDelay)
+      await sleep(effectiveDelay);
     }
   }
 
-  throw lastError
+  throw lastError;
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
@@ -68,8 +62,8 @@ export async function invokeWithRetry<T>(
   options?: RetryOptions
 ): Promise<T> {
   return retry(() => {
-    return window.__TAURI__.core.invoke<T>(command, args)
-  }, options)
+    return window.__TAURI__.core.invoke<T>(command, args);
+  }, options);
 }
 
 /**
@@ -81,12 +75,12 @@ export const RetryConfig = {
     maxAttempts: 3,
     initialDelay: 1000,
     shouldRetry: (error: Error) => {
-      const message = error.message.toLowerCase()
+      const message = error.message.toLowerCase();
       return (
         message.includes('network') ||
         message.includes('timeout') ||
         message.includes('econnrefused')
-      )
+      );
     },
   },
 
@@ -95,8 +89,8 @@ export const RetryConfig = {
     maxAttempts: 2,
     initialDelay: 2000,
     shouldRetry: (error: Error) => {
-      const message = error.message.toLowerCase()
-      return !message.includes('invalid') && !message.includes('not found')
+      const message = error.message.toLowerCase();
+      return !message.includes('invalid') && !message.includes('not found');
     },
   },
 
@@ -106,4 +100,4 @@ export const RetryConfig = {
     initialDelay: 500,
     shouldRetry: () => true,
   },
-} as const
+} as const;

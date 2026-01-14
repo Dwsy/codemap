@@ -1,8 +1,8 @@
-import React, { useRef, useEffect } from 'react'
-import { useCodeMapStore } from '@stores/codemapStore'
-import { MonacoEditor, MonacoEditorRef } from './MonacoEditor'
-import { Button } from './ui/Button'
-import { Icon } from './icons'
+import React, { useRef, useEffect } from 'react';
+import { useCodeMapStore } from '@stores/codemapStore';
+import { MonacoEditor, MonacoEditorRef } from './MonacoEditor';
+import { Button } from './ui/Button';
+import { Icon } from './icons';
 
 export const IntegratedCodePanel: React.FC = () => {
   const {
@@ -11,11 +11,11 @@ export const IntegratedCodePanel: React.FC = () => {
     activeAnnotations,
     closeCodePanel,
     codePanelWidth,
-    isNavigating
-  } = useCodeMapStore()
+    isNavigating,
+  } = useCodeMapStore();
 
-  const editorRef = useRef<MonacoEditorRef>(null)
-  const prevNavigationTargetRef = useRef<typeof navigationTarget>(null)
+  const editorRef = useRef<MonacoEditorRef>(null);
+  const prevNavigationTargetRef = useRef<typeof navigationTarget>(null);
 
   // 监听导航目标变化，执行跳转
   useEffect(() => {
@@ -26,29 +26,26 @@ export const IntegratedCodePanel: React.FC = () => {
     ) {
       // 使用 setTimeout 确保 Monaco 编辑器已完成内容更新
       setTimeout(() => {
-        editorRef.current?.jumpToRange(
-          navigationTarget.startLine,
-          navigationTarget.endLine
-        )
-      }, 100)
-      prevNavigationTargetRef.current = navigationTarget
+        editorRef.current?.jumpToRange(navigationTarget.startLine, navigationTarget.endLine);
+      }, 100);
+      prevNavigationTargetRef.current = navigationTarget;
     }
-  }, [navigationTarget])
+  }, [navigationTarget]);
 
   // 监听批注变化，更新装饰
   useEffect(() => {
     if (editorRef.current && activeAnnotations.length > 0) {
       setTimeout(() => {
         editorRef.current?.setAnnotations(
-          activeAnnotations.map(anno => ({
+          activeAnnotations.map((anno) => ({
             line: anno.line,
             message: anno.message,
-            kind: anno.kind
+            kind: anno.kind,
           }))
-        )
-      }, 150)
+        );
+      }, 150);
     }
-  }, [activeAnnotations])
+  }, [activeAnnotations]);
 
   if (!activeFile) {
     return (
@@ -65,7 +62,7 @@ export const IntegratedCodePanel: React.FC = () => {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (
@@ -73,26 +70,18 @@ export const IntegratedCodePanel: React.FC = () => {
       style={{ width: codePanelWidth }}
       className="border-l border-gray-200 flex flex-col bg-white"
     >
-      <PanelHeader
-        title={activeFile.path}
-        onClose={closeCodePanel}
-        isLoading={isNavigating}
-      />
+      <PanelHeader title={activeFile.path} onClose={closeCodePanel} isLoading={isNavigating} />
       <div className="flex-1 relative">
-        <MonacoEditor
-          ref={editorRef}
-          filePath={activeFile.path}
-          content={activeFile.content}
-        />
+        <MonacoEditor ref={editorRef} filePath={activeFile.path} content={activeFile.content} />
       </div>
     </div>
-  )
-}
+  );
+};
 
 interface PanelHeaderProps {
-  title?: string
-  onClose: () => void
-  isLoading?: boolean
+  title?: string;
+  onClose: () => void;
+  isLoading?: boolean;
 }
 
 const PanelHeader: React.FC<PanelHeaderProps> = ({ title, onClose, isLoading }) => {
@@ -110,16 +99,11 @@ const PanelHeader: React.FC<PanelHeaderProps> = ({ title, onClose, isLoading }) 
           <span className="text-sm text-gray-400">Code Panel</span>
         )}
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onClose}
-        className="flex-shrink-0"
-      >
+      <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
         <Icon.X size={16} />
       </Button>
     </div>
-  )
-}
+  );
+};
 
-export default IntegratedCodePanel
+export default IntegratedCodePanel;

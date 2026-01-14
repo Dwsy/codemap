@@ -1,66 +1,76 @@
-import React, { useState } from 'react'
-import { useCodeMapStore } from '@stores/codemapStore'
-import { Icon, getFileIcon } from '@components/icons'
-import { Button } from '@components/ui/Button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@components/ui/Dialog'
-import { ScrollArea } from '@components/ui/ScrollArea'
-import { Input } from '@components/ui/Input'
-import ReactMarkdown from 'react-markdown'
-import type { CodeRef } from 'codemap'
+import React, { useState } from 'react';
+import { useCodeMapStore } from '@stores/codemapStore';
+import { Icon, getFileIcon } from '@components/icons';
+import { Button } from '@components/ui/Button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@components/ui/Dialog';
+import { ScrollArea } from '@components/ui/ScrollArea';
+import { Input } from '@components/ui/Input';
+import ReactMarkdown from 'react-markdown';
+import type { CodeRef } from 'codemap';
 
 /**
  * NodeDetails 组件
  * 显示选中节点的详细信息
  */
 const NodeDetails: React.FC = () => {
-  const getSelectedNode = useCodeMapStore(state => state.getSelectedNode)
-  const selectedNode = getSelectedNode()
-  const [showFullTrace, setShowFullTrace] = useState(false)
-  const [showAskAIDialog, setShowAskAIDialog] = useState(false)
-  const [aiResponse, setAiResponse] = useState('')
-  const [isLoadingAI, setIsLoadingAI] = useState(false)
-  
+  const getSelectedNode = useCodeMapStore((state) => state.getSelectedNode);
+  const selectedNode = getSelectedNode();
+  const [showFullTrace, setShowFullTrace] = useState(false);
+  const [showAskAIDialog, setShowAskAIDialog] = useState(false);
+  const [aiResponse, setAiResponse] = useState('');
+  const [isLoadingAI, setIsLoadingAI] = useState(false);
+
   const handleCopyReference = () => {
-    if (!selectedNode) return
-    const reference = `${selectedNode.node_id}: ${selectedNode.title}`
-    navigator.clipboard.writeText(reference).catch(err => {
-      console.error('Failed to copy:', err)
-    })
-  }
-  
+    if (!selectedNode) return;
+    const reference = `${selectedNode.node_id}: ${selectedNode.title}`;
+    navigator.clipboard.writeText(reference).catch((err) => {
+      console.error('Failed to copy:', err);
+    });
+  };
+
   const handleAskAI = () => {
-    if (!selectedNode) return
-    setShowAskAIDialog(true)
+    if (!selectedNode) return;
+    setShowAskAIDialog(true);
     // 自动生成分析提示
-    const prompt = `Analyze this code node:\n\nNode ID: ${selectedNode.node_id}\nTitle: ${selectedNode.title}\n\nSummary:\n${selectedNode.summary}\n\nTrace Guide:\n${selectedNode.trace_guide.short}`
-    setAiResponse(prompt)
-  }
-  
+    const prompt = `Analyze this code node:\n\nNode ID: ${selectedNode.node_id}\nTitle: ${selectedNode.title}\n\nSummary:\n${selectedNode.summary}\n\nTrace Guide:\n${selectedNode.trace_guide.short}`;
+    setAiResponse(prompt);
+  };
+
   const handleSendToAI = async () => {
-    if (!aiResponse.trim()) return
-    
-    setIsLoadingAI(true)
+    if (!aiResponse.trim()) return;
+
+    setIsLoadingAI(true);
     try {
       // TODO: 集成实际的 AI 服务
       // 这里只是模拟 AI 响应
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      setAiResponse(prev => prev + '\n\n---\n\n**AI Analysis:**\n\nThis is a simulated AI response. In production, this would connect to an AI service like Claude, GPT-4, or other LLMs to provide detailed analysis of the code node.\n\nKey insights:\n- The component handles order processing\n- It integrates multiple services\n- Consider adding error handling for edge cases')
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setAiResponse(
+        (prev) =>
+          prev +
+          '\n\n---\n\n**AI Analysis:**\n\nThis is a simulated AI response. In production, this would connect to an AI service like Claude, GPT-4, or other LLMs to provide detailed analysis of the code node.\n\nKey insights:\n- The component handles order processing\n- It integrates multiple services\n- Consider adding error handling for edge cases'
+      );
     } catch (error) {
-      console.error('Failed to get AI response:', error)
-      setAiResponse(prev => prev + '\n\n---\n\n**Error:** Failed to get AI response')
+      console.error('Failed to get AI response:', error);
+      setAiResponse((prev) => prev + '\n\n---\n\n**Error:** Failed to get AI response');
     } finally {
-      setIsLoadingAI(false)
+      setIsLoadingAI(false);
     }
-  }
-  
+  };
+
   if (!selectedNode) {
     return (
       <div className="h-full flex items-center justify-center text-sm text-muted-foreground">
         Select a node to view details
       </div>
-    )
+    );
   }
-  
+
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
@@ -68,20 +78,20 @@ const NodeDetails: React.FC = () => {
         <div className="flex items-start justify-between">
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-lg truncate">{selectedNode.title}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              {selectedNode.node_id}
-            </p>
+            <p className="text-sm text-muted-foreground mt-1">{selectedNode.node_id}</p>
           </div>
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {/* TODO: Close panel */}}
+            onClick={() => {
+              /* TODO: Close panel */
+            }}
           >
             <Icon.X size={16} />
           </Button>
         </div>
       </div>
-      
+
       {/* Content */}
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
@@ -91,11 +101,9 @@ const NodeDetails: React.FC = () => {
               <Icon.FileText size={14} />
               Summary
             </h4>
-            <p className="text-sm text-muted-foreground">
-              {selectedNode.summary}
-            </p>
+            <p className="text-sm text-muted-foreground">{selectedNode.summary}</p>
           </section>
-          
+
           {/* Code References */}
           {selectedNode.code_refs.length > 0 && (
             <section>
@@ -105,28 +113,24 @@ const NodeDetails: React.FC = () => {
               </h4>
               <div className="space-y-2">
                 {selectedNode.code_refs.map((ref: CodeRef, index: number) => (
-                  <CodeRefItem
-                    key={index}
-                    codeRef={ref}
-                    nodeId={selectedNode.node_id}
-                  />
+                  <CodeRefItem key={index} codeRef={ref} nodeId={selectedNode.node_id} />
                 ))}
               </div>
             </section>
           )}
-          
+
           {/* Trace Guide */}
           <section>
             <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
               <Icon.BookOpen size={14} />
               Trace Guide
             </h4>
-            
+
             {/* Short description */}
             <div className="text-sm text-muted-foreground mb-3">
               {selectedNode.trace_guide.short}
             </div>
-            
+
             {/* "See more" button */}
             {selectedNode.trace_guide.long && (
               <Button
@@ -148,7 +152,7 @@ const NodeDetails: React.FC = () => {
                 )}
               </Button>
             )}
-            
+
             {/* Long description */}
             {showFullTrace && selectedNode.trace_guide.long && (
               <div className="mt-3 p-3 bg-muted rounded-lg">
@@ -160,38 +164,28 @@ const NodeDetails: React.FC = () => {
           </section>
         </div>
       </ScrollArea>
-      
+
       {/* Footer Actions */}
       <div className="p-4 border-t border-border">
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
-            onClick={handleCopyReference}
-          >
+          <Button variant="outline" size="sm" className="flex-1" onClick={handleCopyReference}>
             <Icon.Copy size={14} className="mr-2" />
             Copy Reference
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="flex-1"
-            onClick={handleAskAI}
-          >
+          <Button variant="outline" size="sm" className="flex-1" onClick={handleAskAI}>
             <Icon.MessageSquare size={14} className="mr-2" />
             Ask AI
           </Button>
         </div>
       </div>
-      
+
       {/* Ask AI Dialog */}
       <Dialog open={showAskAIDialog} onOpenChange={setShowAskAIDialog}>
         <DialogContent className="max-w-3xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>Ask AI</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Analysis Request</label>
@@ -203,7 +197,7 @@ const NodeDetails: React.FC = () => {
                 disabled={isLoadingAI}
               />
             </div>
-            
+
             {aiResponse.includes('---') && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">AI Response</label>
@@ -215,7 +209,7 @@ const NodeDetails: React.FC = () => {
               </div>
             )}
           </div>
-          
+
           <DialogFooter>
             <Button
               variant="outline"
@@ -224,10 +218,7 @@ const NodeDetails: React.FC = () => {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handleSendToAI}
-              disabled={!aiResponse.trim() || isLoadingAI}
-            >
+            <Button onClick={handleSendToAI} disabled={!aiResponse.trim() || isLoadingAI}>
               {isLoadingAI ? (
                 <>
                   <Icon.Loader2 size={16} className="mr-2 animate-spin" />
@@ -244,24 +235,24 @@ const NodeDetails: React.FC = () => {
         </DialogContent>
       </Dialog>
     </div>
-  )
-}
+  );
+};
 
 /**
  * CodeRef 项
  */
 interface CodeRefItemProps {
-  codeRef: CodeRef
-  nodeId: string
+  codeRef: CodeRef;
+  nodeId: string;
 }
 
 const CodeRefItem: React.FC<CodeRefItemProps> = ({ codeRef, nodeId }) => {
-  const FileIcon = getFileIcon(codeRef.path.split('.').pop() || '')
-  const { navigateToCodeRef, isNavigating } = useCodeMapStore()
+  const FileIcon = getFileIcon(codeRef.path.split('.').pop() || '');
+  const { navigateToCodeRef, isNavigating } = useCodeMapStore();
 
   const handleClick = async () => {
-    await navigateToCodeRef(codeRef, nodeId)
-  }
+    await navigateToCodeRef(codeRef, nodeId);
+  };
 
   return (
     <button
@@ -273,13 +264,9 @@ const CodeRefItem: React.FC<CodeRefItemProps> = ({ codeRef, nodeId }) => {
         <FileIcon size={16} className="mt-0.5 text-muted-foreground flex-shrink-0" />
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium truncate">
-              {codeRef.path}
-            </span>
+            <span className="text-sm font-medium truncate">{codeRef.path}</span>
             {codeRef.symbol && (
-              <span className="text-xs text-muted-foreground">
-                ({codeRef.symbol})
-              </span>
+              <span className="text-xs text-muted-foreground">({codeRef.symbol})</span>
             )}
           </div>
           <div className="text-xs text-muted-foreground mt-1">
@@ -296,7 +283,7 @@ const CodeRefItem: React.FC<CodeRefItemProps> = ({ codeRef, nodeId }) => {
         )}
       </div>
     </button>
-  )
-}
+  );
+};
 
-export default NodeDetails
+export default NodeDetails;

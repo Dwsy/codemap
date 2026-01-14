@@ -1,9 +1,9 @@
 // 配置 Monaco Editor 使用本地版本，不使用 CDN
 export const monacoConfig = {
   paths: {
-    vs: '/node_modules/monaco-editor/min/vs'
-  }
-}
+    vs: '/node_modules/monaco-editor/min/vs',
+  },
+};
 
 // 在应用启动时配置
 if (typeof window !== 'undefined') {
@@ -14,7 +14,7 @@ if (typeof window !== 'undefined') {
         {
           type: 'module',
         }
-      )
-    }
-  }
+      );
+    },
+  };
 }

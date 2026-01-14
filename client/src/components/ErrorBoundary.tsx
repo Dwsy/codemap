@@ -1,24 +1,24 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react'
-import { Button } from './ui/Button'
+import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Button } from './ui/Button';
 
 interface Props {
-  children: ReactNode
+  children: ReactNode;
 }
 
 interface State {
-  hasError: boolean
-  error: Error | null
-  errorInfo: ErrorInfo | null
+  hasError: boolean;
+  error: Error | null;
+  errorInfo: ErrorInfo | null;
 }
 
 export class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
-    super(props)
+    super(props);
     this.state = {
       hasError: false,
       error: null,
       errorInfo: null,
-    }
+    };
   }
 
   static getDerivedStateFromError(error: Error): State {
@@ -26,15 +26,15 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: true,
       error,
       errorInfo: null,
-    }
+    };
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo)
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
     this.setState({
       error,
       errorInfo,
-    })
+    });
 
     // TODO: Send error to error tracking service (e.g., Sentry)
   }
@@ -44,8 +44,8 @@ export class ErrorBoundary extends Component<Props, State> {
       hasError: false,
       error: null,
       errorInfo: null,
-    })
-  }
+    });
+  };
 
   render() {
     if (this.state.hasError) {
@@ -69,32 +69,22 @@ export class ErrorBoundary extends Component<Props, State> {
                 </svg>
               </div>
               <div>
-                <h1 className="text-xl font-semibold text-gray-900">
-                  出错了
-                </h1>
-                <p className="text-sm text-gray-500">
-                  应用程序遇到了意外错误
-                </p>
+                <h1 className="text-xl font-semibold text-gray-900">出错了</h1>
+                <p className="text-sm text-gray-500">应用程序遇到了意外错误</p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div>
-                <h2 className="text-sm font-medium text-gray-900 mb-2">
-                  错误信息
-                </h2>
+                <h2 className="text-sm font-medium text-gray-900 mb-2">错误信息</h2>
                 <div className="bg-gray-50 rounded-md p-4">
-                  <p className="text-sm text-red-600 font-mono">
-                    {this.state.error?.message}
-                  </p>
+                  <p className="text-sm text-red-600 font-mono">{this.state.error?.message}</p>
                 </div>
               </div>
 
               {this.state.errorInfo && (
                 <div>
-                  <h2 className="text-sm font-medium text-gray-900 mb-2">
-                    堆栈跟踪
-                  </h2>
+                  <h2 className="text-sm font-medium text-gray-900 mb-2">堆栈跟踪</h2>
                   <details className="bg-gray-50 rounded-md">
                     <summary className="px-4 py-3 text-sm text-gray-600 cursor-pointer hover:bg-gray-100 rounded-t-md">
                       查看详细信息
@@ -110,10 +100,7 @@ export class ErrorBoundary extends Component<Props, State> {
                 <Button onClick={this.handleReset} variant="default">
                   重试
                 </Button>
-                <Button
-                  onClick={() => window.location.reload()}
-                  variant="outline"
-                >
+                <Button onClick={() => window.location.reload()} variant="outline">
                   刷新页面
                 </Button>
               </div>
@@ -131,9 +118,9 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
           </div>
         </div>
-      )
+      );
     }
 
-    return this.props.children
+    return this.props.children;
   }
 }

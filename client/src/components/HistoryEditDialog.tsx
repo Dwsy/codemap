@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/Dialog'
-import { Button } from './ui/Button'
-import { Input } from './ui/Input'
-import { Icon } from './icons'
-import type { CodeMapMeta } from 'codemap'
+import React, { useState, useEffect } from 'react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/Dialog';
+import { Button } from './ui/Button';
+import { Input } from './ui/Input';
+import { Icon } from './icons';
+import type { CodeMapMeta } from 'codemap';
 
 interface HistoryEditDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  item: CodeMapMeta | null
-  onSave: (id: string, updates: { title?: string; note?: string; tags?: string[] }) => Promise<void>
-  onExport: (id: string, format: 'json' | 'markdown' | 'html') => Promise<string>
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  item: CodeMapMeta | null;
+  onSave: (
+    id: string,
+    updates: { title?: string; note?: string; tags?: string[] }
+  ) => Promise<void>;
+  onExport: (id: string, format: 'json' | 'markdown' | 'html') => Promise<string>;
 }
 
 export const HistoryEditDialog: React.FC<HistoryEditDialogProps> = ({
@@ -20,57 +23,57 @@ export const HistoryEditDialog: React.FC<HistoryEditDialogProps> = ({
   onSave,
   onExport,
 }) => {
-  const [title, setTitle] = useState('')
-  const [note, setNote] = useState('')
-  const [tagsInput, setTagsInput] = useState('')
-  const [isSaving, setIsSaving] = useState(false)
-  const [isExporting, setIsExporting] = useState(false)
-  const [exportSuccess, setExportSuccess] = useState<string | null>(null)
+  const [title, setTitle] = useState('');
+  const [note, setNote] = useState('');
+  const [tagsInput, setTagsInput] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccess, setExportSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (item) {
-      setTitle(item.title || '')
-      setNote(item.note || '')
-      setTagsInput(item.tags?.join(', ') || '')
-      setExportSuccess(null)
+      setTitle(item.title || '');
+      setNote(item.note || '');
+      setTagsInput(item.tags?.join(', ') || '');
+      setExportSuccess(null);
     }
-  }, [item])
+  }, [item]);
 
   const handleSave = async () => {
-    if (!item) return
+    if (!item) return;
 
-    setIsSaving(true)
+    setIsSaving(true);
     try {
       const tags = tagsInput
         .split(',')
-        .map(t => t.trim())
-        .filter(t => t.length > 0)
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
 
-      await onSave(item.id, { title, note, tags })
-      onOpenChange(false)
+      await onSave(item.id, { title, note, tags });
+      onOpenChange(false);
     } catch (error) {
-      console.error('Failed to save:', error)
+      console.error('Failed to save:', error);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleExport = async (format: 'json' | 'markdown' | 'html') => {
-    if (!item) return
+    if (!item) return;
 
-    setIsExporting(true)
-    setExportSuccess(null)
+    setIsExporting(true);
+    setExportSuccess(null);
     try {
-      const path = await onExport(item.id, format)
-      setExportSuccess(`Exported to: ${path}`)
+      const path = await onExport(item.id, format);
+      setExportSuccess(`Exported to: ${path}`);
     } catch (error) {
-      console.error('Failed to export:', error)
+      console.error('Failed to export:', error);
     } finally {
-      setIsExporting(false)
+      setIsExporting(false);
     }
-  }
+  };
 
-  if (!item) return null
+  if (!item) return null;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -150,18 +153,12 @@ export const HistoryEditDialog: React.FC<HistoryEditDialogProps> = ({
                 HTML
               </Button>
             </div>
-            {exportSuccess && (
-              <p className="text-xs text-green-600 mt-2">{exportSuccess}</p>
-            )}
+            {exportSuccess && <p className="text-xs text-green-600 mt-2">{exportSuccess}</p>}
           </div>
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isSaving}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancel
           </Button>
           <Button onClick={handleSave} disabled={isSaving}>
@@ -177,7 +174,7 @@ export const HistoryEditDialog: React.FC<HistoryEditDialogProps> = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default HistoryEditDialog
+export default HistoryEditDialog;

@@ -1,28 +1,27 @@
-import React, { useEffect, useState } from 'react'
-import { useCodeMapStore } from '@stores/codemapStore'
-import { ErrorBoundary } from '@components/ErrorBoundary'
-import Header from '@components/Header'
-import Sidebar from '@components/Sidebar'
-import MainPanel from '@components/MainPanel'
-import { CodeBrowser } from '@components/CodeBrowser'
-import { IntegratedCodePanel } from '@components/IntegratedCodePanel'
-import { Icon } from '@components/icons'
-import { Button } from '@components/ui/Button'
+import React, { useEffect, useState } from 'react';
+import { useCodeMapStore } from '@stores/codemapStore';
+import { ErrorBoundary } from '@components/ErrorBoundary';
+import Sidebar from '@components/Sidebar';
+import MainPanel from '@components/MainPanel';
+import { CodeBrowser } from '@components/CodeBrowser';
+import { IntegratedCodePanel } from '@components/IntegratedCodePanel';
+import { Icon } from '@components/icons';
+import { Button } from '@components/ui/Button';
 
-type ViewMode = 'codemap' | 'codebrowser'
+type ViewMode = 'codemap' | 'codebrowser';
 
 /**
  * CodeMap 主应用组件
  */
 const App: React.FC = () => {
-  const { loadHistory, loadSuggestedTopics, showCodePanel } = useCodeMapStore()
-  const [viewMode, setViewMode] = useState<ViewMode>('codemap')
+  const { loadHistory, loadSuggestedTopics, showCodePanel } = useCodeMapStore();
+  const [viewMode, setViewMode] = useState<ViewMode>('codemap');
 
   useEffect(() => {
     // 初始化加载
-    loadHistory()
-    loadSuggestedTopics()
-  }, [loadHistory, loadSuggestedTopics])
+    loadHistory();
+    loadSuggestedTopics();
+  }, [loadHistory, loadSuggestedTopics]);
 
   return (
     <ErrorBoundary>
@@ -71,7 +70,7 @@ const App: React.FC = () => {
         )}
       </div>
     </ErrorBoundary>
-  )
-}
+  );
+};
 
-export default App
+export default App;
