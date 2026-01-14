@@ -1,41 +1,47 @@
-import React, { useState } from 'react'
-import { cn } from './index'
+import React, { useState } from 'react';
+import { cn } from './index';
 
-export function Tabs({ className, children, defaultValue, onValueChange, ...props }: {
-  className?: string
-  children: React.ReactNode
-  defaultValue?: string
-  onValueChange?: (value: string) => void
+export function Tabs({
+  className,
+  children,
+  defaultValue,
+  onValueChange,
+  ...props
+}: {
+  className?: string;
+  children: React.ReactNode;
+  defaultValue?: string;
+  onValueChange?: (value: string) => void;
 } & React.HTMLAttributes<HTMLDivElement>) {
-  const [activeTab, setActiveTab] = useState(defaultValue || '')
-  
+  const [activeTab, setActiveTab] = useState(defaultValue || '');
+
   return (
-    <div ref={ref => ref} className={cn('', className)} {...props}>
-      {React.Children.map(children, child => {
+    <div ref={(ref) => ref} className={cn('', className)} {...props}>
+      {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
           // Only pass isActive to TabsTrigger components
           if (child.type === TabsTrigger) {
             return React.cloneElement(child as React.ReactElement<any>, {
               isActive: child.props.value === activeTab,
               onClick: () => {
-                setActiveTab(child.props.value)
-                onValueChange?.(child.props.value)
-              }
-            })
+                setActiveTab(child.props.value);
+                onValueChange?.(child.props.value);
+              },
+            });
           }
           // Pass activeTab to TabsContent components
           if (child.type === TabsContent) {
             return React.cloneElement(child as React.ReactElement<any>, {
-              activeTab: activeTab
-            })
+              activeTab: activeTab,
+            });
           }
         }
-        return child
+        return child;
       })}
     </div>
-  )
+  );
 }
-Tabs.displayName = 'Tabs'
+Tabs.displayName = 'Tabs';
 
 export function TabsList({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
@@ -47,20 +53,20 @@ export function TabsList({ className, ...props }: React.HTMLAttributes<HTMLDivEl
       )}
       {...props}
     />
-  )
+  );
 }
 
-export function TabsTrigger({ 
-  value, 
-  isActive, 
-  onClick, 
-  className, 
-  ...props 
+export function TabsTrigger({
+  value,
+  isActive,
+  onClick,
+  className,
+  ...props
 }: {
-  value: string
-  isActive?: boolean
-  onClick?: () => void
-  className?: string
+  value: string;
+  isActive?: boolean;
+  onClick?: () => void;
+  className?: string;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
@@ -77,22 +83,22 @@ export function TabsTrigger({
       )}
       {...props}
     />
-  )
+  );
 }
-TabsTrigger.displayName = 'TabsTrigger'
+TabsTrigger.displayName = 'TabsTrigger';
 
-export function TabsContent({ 
-  value, 
-  activeTab, 
-  className, 
-  ...props 
+export function TabsContent({
+  value,
+  activeTab,
+  className,
+  ...props
 }: {
-  value: string
-  activeTab?: string
-  className?: string
+  value: string;
+  activeTab?: string;
+  className?: string;
 } & React.HTMLAttributes<HTMLDivElement>) {
-  if (activeTab !== value) return null
-  
+  if (activeTab !== value) return null;
+
   return (
     <div
       className={cn(
@@ -102,6 +108,6 @@ export function TabsContent({
       )}
       {...props}
     />
-  )
+  );
 }
-TabsContent.displayName = 'TabsContent'
+TabsContent.displayName = 'TabsContent';

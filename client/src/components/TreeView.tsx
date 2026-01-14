@@ -1,20 +1,20 @@
-import React, { useState } from 'react'
-import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react'
-import { cn } from './ui/index'
-import { Node as CodeMapNode } from 'codemap'
+import React, { useState } from 'react';
+import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
+import { cn } from './ui/index';
+import { Node as CodeMapNode } from 'codemap';
 
 interface TreeNode {
-  id: string
-  name: string
-  type: 'file' | 'folder'
-  children?: TreeNode[]
-  filePath?: string
+  id: string;
+  name: string;
+  type: 'file' | 'folder';
+  children?: TreeNode[];
+  filePath?: string;
 }
 
 interface TreeViewProps {
-  nodes?: TreeNode[] | CodeMapNode[]
-  onNodeClick?: (node: TreeNode | CodeMapNode) => void
-  selectedNodeId?: string | null | undefined
+  nodes?: TreeNode[] | CodeMapNode[];
+  onNodeClick?: (node: TreeNode | CodeMapNode) => void;
+  selectedNodeId?: string | null | undefined;
 }
 
 // 将 CodeMapNode 转换为 TreeNode
@@ -23,39 +23,40 @@ function toTreeNode(node: CodeMapNode, allNodes: CodeMapNode[]): TreeNode {
     id: node.node_id,
     name: node.title,
     type: (node.children?.length ?? 0) > 0 ? 'folder' : 'file',
-    children: node.children?.map(childId => {
-      const child = allNodes.find(n => n.node_id === childId)
-      return child ? toTreeNode(child, allNodes) : { id: childId, name: 'Unknown', type: 'file' }
-    }) ?? [],
-  }
+    children:
+      node.children?.map((childId) => {
+        const child = allNodes.find((n) => n.node_id === childId);
+        return child ? toTreeNode(child, allNodes) : { id: childId, name: 'Unknown', type: 'file' };
+      }) ?? [],
+  };
 }
 
 export function TreeView({ nodes = [], onNodeClick, selectedNodeId }: TreeViewProps) {
-  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set())
+  const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // 检查是否是 CodeMapNode
-  const isCodeMapNodes = nodes.length > 0 && 'node_id' in nodes[0]
+  const isCodeMapNodes = nodes.length > 0 && 'node_id' in nodes[0];
 
   // 转换为 TreeNode
   const treeNodes: TreeNode[] = isCodeMapNodes
-    ? (nodes as CodeMapNode[]).map(node => toTreeNode(node, nodes as CodeMapNode[]))
-    : (nodes as TreeNode[])
+    ? (nodes as CodeMapNode[]).map((node) => toTreeNode(node, nodes as CodeMapNode[]))
+    : (nodes as TreeNode[]);
 
   const toggleNode = (nodeId: string) => {
-    setExpandedNodes(prev => {
-      const next = new Set(prev)
+    setExpandedNodes((prev) => {
+      const next = new Set(prev);
       if (next.has(nodeId)) {
-        next.delete(nodeId)
+        next.delete(nodeId);
       } else {
-        next.add(nodeId)
+        next.add(nodeId);
       }
-      return next
-    })
-  }
+      return next;
+    });
+  };
 
   const renderNode = (node: TreeNode, level: number = 0) => {
-    const isExpanded = expandedNodes.has(node.id)
-    const isSelected = selectedNodeId === node.id
+    const isExpanded = expandedNodes.has(node.id);
+    const isSelected = selectedNodeId === node.id;
 
     return (
       <div key={node.id}>
@@ -68,9 +69,9 @@ export function TreeView({ nodes = [], onNodeClick, selectedNodeId }: TreeViewPr
           style={{ paddingLeft: `${level * 16 + 8}px` }}
           onClick={() => {
             if (node.type === 'folder') {
-              toggleNode(node.id)
+              toggleNode(node.id);
             }
-            onNodeClick?.(node)
+            onNodeClick?.(node);
           }}
         >
           {node.type === 'folder' ? (
@@ -92,17 +93,11 @@ export function TreeView({ nodes = [], onNodeClick, selectedNodeId }: TreeViewPr
           <span className="text-sm">{node.name}</span>
         </div>
         {isExpanded && node.children && (
-          <div>
-            {node.children.map(child => renderNode(child, level + 1))}
-          </div>
+          <div>{node.children.map((child) => renderNode(child, level + 1))}</div>
         )}
       </div>
-    )
-  }
+    );
+  };
 
-  return (
-    <div className="h-full overflow-auto">
-      {treeNodes.map(node => renderNode(node))}
-    </div>
-  )
+  return <div className="h-full overflow-auto">{treeNodes.map((node) => renderNode(node))}</div>;
 }

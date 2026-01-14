@@ -84,24 +84,20 @@ pub async fn execute_command_stream(
     let tx_stdout = tx.clone();
     std::thread::spawn(move || {
         let reader = BufReader::new(stdout);
-        for line in reader.lines() {
-            if let Ok(line) = line {
-                let _ = tx_stdout.send(("stdout", line));
-            }
+        for line in reader.lines().flatten() {
+            let _ = tx_stdout.send(("stdout", line));
         }
     });
-    
+
     // 读取 stderr
     let tx_stderr = tx.clone();
     std::thread::spawn(move || {
         let reader = BufReader::new(stderr);
-        for line in reader.lines() {
-            if let Ok(line) = line {
-                let _ = tx_stderr.send(("stderr", line));
-            }
+        for line in reader.lines().flatten() {
+            let _ = tx_stderr.send(("stderr", line));
         }
     });
-    
+
     // 关闭原始发送者
     drop(tx);
     

@@ -1,13 +1,13 @@
-import React, { useState } from 'react'
-import { useCodeMapStore } from '@stores/codemapStore'
-import { Icon, getFileIcon } from '@components/icons'
-import { Button } from '@components/ui/Button'
-import { Input } from '@components/ui/Input'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/Tabs'
-import { ScrollArea } from '@components/ui/ScrollArea'
-import { HistoryEditDialog } from './HistoryEditDialog'
-import { open } from '@tauri-apps/plugin-dialog'
-import type { CodeMapMeta } from 'codemap'
+import React, { useState } from 'react';
+import { useCodeMapStore } from '@stores/codemapStore';
+import { Icon, getFileIcon } from '@components/icons';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/Tabs';
+import { ScrollArea } from '@components/ui/ScrollArea';
+import { HistoryEditDialog } from './HistoryEditDialog';
+import { open } from '@tauri-apps/plugin-dialog';
+import type { CodeMapMeta } from 'codemap';
 
 /**
  * Sidebar 组件
@@ -25,63 +25,70 @@ const Sidebar: React.FC = () => {
     exportHistory,
     importHistory,
     setShowCreateDialog,
-    setInitialPrompt
-  } = useCodeMapStore()
+    setInitialPrompt,
+  } = useCodeMapStore();
 
-  const [activeTab, setActiveTab] = useState<'history' | 'suggestions'>('suggestions')
-  const [editDialogOpen, setEditDialogOpen] = useState(false)
-  const [selectedItem, setSelectedItem] = useState<CodeMapMeta | null>(null)
-  const [isImporting, setIsImporting] = useState(false)
+  const [activeTab, setActiveTab] = useState<'history' | 'suggestions'>('suggestions');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState<CodeMapMeta | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   // 过滤历史记录和建议主题
-  const filteredHistory = history.filter(item =>
-    item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    item.query.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredHistory = history.filter(
+    (item) =>
+      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.query.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
-  const filteredSuggestions = suggestedTopics.filter(topic =>
-    topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    topic.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredSuggestions = suggestedTopics.filter(
+    (topic) =>
+      topic.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      topic.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleSuggestedTopicClick = async (topic: import('codemap').SuggestedTopic) => {
-    const fullPrompt = topic.title + ': ' + topic.description
-    setInitialPrompt(fullPrompt)
-    setShowCreateDialog(true)
-  }
+    const fullPrompt = topic.title + ': ' + topic.description;
+    setInitialPrompt(fullPrompt);
+    setShowCreateDialog(true);
+  };
 
   const handleEditClick = (item: CodeMapMeta) => {
-    setSelectedItem(item)
-    setEditDialogOpen(true)
-  }
+    setSelectedItem(item);
+    setEditDialogOpen(true);
+  };
 
   const handleImport = async () => {
     try {
-      setIsImporting(true)
+      setIsImporting(true);
       const selected = await open({
         multiple: false,
-        filters: [{
-          name: 'CodeMap',
-          extensions: ['json']
-        }]
-      })
+        filters: [
+          {
+            name: 'CodeMap',
+            extensions: ['json'],
+          },
+        ],
+      });
 
       if (selected && typeof selected === 'string') {
-        await importHistory(selected)
+        await importHistory(selected);
       }
     } catch (error) {
-      console.error('Failed to import:', error)
+      console.error('Failed to import:', error);
     } finally {
-      setIsImporting(false)
+      setIsImporting(false);
     }
-  }
+  };
 
   return (
     <aside className="w-80 border-r border-border flex flex-col bg-card">
       {/* Search */}
       <div className="p-3 border-b border-border">
         <div className="relative">
-          <Icon.Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Icon.Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
+          />
           <Input
             placeholder="Search codemaps..."
             value={searchQuery}
@@ -90,25 +97,19 @@ const Sidebar: React.FC = () => {
           />
         </div>
       </div>
-      
+
       {/* Tabs */}
-      <Tabs 
-        defaultValue="suggestions" 
+      <Tabs
+        defaultValue="suggestions"
         onValueChange={(v) => setActiveTab(v as any)}
         className="flex-1 flex flex-col"
       >
         <TabsList className="grid w-full grid-cols-2 m-0 rounded-none border-b border-border">
-          <TabsTrigger 
-            value="suggestions" 
-            className="text-xs"
-          >
+          <TabsTrigger value="suggestions" className="text-xs">
             <Icon.Star size={14} className="mr-1" />
             Suggestions
           </TabsTrigger>
-          <TabsTrigger 
-            value="history" 
-            className="text-xs"
-          >
+          <TabsTrigger value="history" className="text-xs">
             <Icon.Clock size={14} className="mr-1" />
             History
           </TabsTrigger>
@@ -134,7 +135,7 @@ const Sidebar: React.FC = () => {
             </div>
           </ScrollArea>
         </TabsContent>
-        
+
         <TabsContent value="history" className="flex-1 flex-1 m-0">
           {/* Import Button */}
           <div className="p-2 border-b border-border">
@@ -191,15 +192,15 @@ const Sidebar: React.FC = () => {
         onExport={exportHistory}
       />
     </aside>
-  )
-}
+  );
+};
 
 /**
  * 建议主题项
  */
 interface SuggestedTopicItemProps {
-  topic: import('codemap').SuggestedTopic
-  onClick: (topic: import('codemap').SuggestedTopic) => void
+  topic: import('codemap').SuggestedTopic;
+  onClick: (topic: import('codemap').SuggestedTopic) => void;
 }
 
 const SuggestedTopicItem: React.FC<SuggestedTopicItemProps> = ({ topic, onClick }) => {
@@ -220,27 +221,25 @@ const SuggestedTopicItem: React.FC<SuggestedTopicItemProps> = ({ topic, onClick 
           <h4 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
             {topic.title}
           </h4>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
-            {topic.description}
-          </p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{topic.description}</p>
         </div>
       </div>
     </button>
-  )
-}
+  );
+};
 
 /**
  * 历史记录项
  */
 interface HistoryItemProps {
-  item: import('codemap').CodeMapMeta
-  onClick: () => void
-  onDelete: () => void
-  onEdit: () => void
+  item: import('codemap').CodeMapMeta;
+  onClick: () => void;
+  onDelete: () => void;
+  onEdit: () => void;
 }
 
 const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEdit }) => {
-  const [showActions, setShowActions] = useState(false)
+  const [showActions, setShowActions] = useState(false);
 
   return (
     <div
@@ -254,12 +253,8 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEd
           <Icon.Map size={16} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="text-sm font-medium line-clamp-2">
-            {item.title}
-          </h4>
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-            {item.query}
-          </p>
+          <h4 className="text-sm font-medium line-clamp-2">{item.title}</h4>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{item.query}</p>
           <div className="flex items-center gap-2 mt-2">
             <span className="text-xs text-muted-foreground">
               {new Date(item.created_at).toLocaleDateString()}
@@ -277,9 +272,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEd
                     </span>
                   ))}
                   {item.tags.length > 2 && (
-                    <span className="text-xs text-muted-foreground">
-                      +{item.tags.length - 2}
-                    </span>
+                    <span className="text-xs text-muted-foreground">+{item.tags.length - 2}</span>
                   )}
                 </div>
               </>
@@ -293,8 +286,8 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEd
         <div className="absolute top-2 right-2 flex gap-1">
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              onEdit()
+              e.stopPropagation();
+              onEdit();
             }}
             className="p-1 rounded hover:bg-primary/10 hover:text-primary transition-colors"
             title="Edit"
@@ -303,8 +296,8 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEd
           </button>
           <button
             onClick={(e) => {
-              e.stopPropagation()
-              onDelete()
+              e.stopPropagation();
+              onDelete();
             }}
             className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
             title="Delete"
@@ -314,7 +307,7 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEd
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
-export default Sidebar
+export default Sidebar;

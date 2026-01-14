@@ -1,6 +1,5 @@
-use crate::codemap::{CodeMap, Location, Trace};
+use crate::codemap_v2::{CodeMap, Node, Edge, CodeRef, TraceGuide, EdgeType, ModelTier};
 use anyhow::{Context, Result};
-use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
 
@@ -12,311 +11,222 @@ impl Analyzer {
     pub fn new(project_root: String) -> Self {
         Analyzer { project_root }
     }
-    
-    pub fn analyze(&self, files: Vec<String>, query: String) -> Result<CodeMap> {
+
+    pub fn analyze(&self, files: Vec<String>, query: String, model_tier: ModelTier) -> Result<CodeMap> {
+        let repo_name = Path::new(&self.project_root)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("unknown");
+
         let mut codemap = CodeMap::new(
             query.clone(),
             self.project_root.clone(),
-            format!("{} - 分析结果", query),
-            format!("对查询 '{}' 的代码流程分析", query),
+            repo_name.to_string(),
+            model_tier,
         );
-        
+
         // Read and parse all files
-        let mut all_locations: Vec<Location> = Vec::new();
-        let mut file_contents: HashMap<String, String> = HashMap::new();
-        
-        for file_path in &files {
+        let mut nodes: Vec<Node> = Vec::new();
+        let mut edges: Vec<Edge> = Vec::new();
+        let mut node_counter = 0;
+
+        for (file_idx, file_path) in files.iter().enumerate() {
             let content = fs::read_to_string(file_path)
                 .with_context(|| format!("Failed to read file: {}", file_path))?;
-            file_contents.insert(file_path.clone(), content.clone());
 
-            // Analyze file for key locations
-            let locations = self.analyze_file(file_path, &content)?;
-            all_locations.extend(locations);
+            // Analyze file and create nodes
+            let (mut file_nodes, file_edges) = self.analyze_file(file_path, &content, file_idx, &mut node_counter)?;
+            nodes.append(&mut file_nodes);
+            edges.extend(file_edges);
         }
-        
-        // Group locations into traces
-        let traces = self.create_traces(&all_locations, &query)?;
-        
-        // Generate Mermaid diagram
-        let mermaid_diagram = self.generate_mermaid_diagram(&traces);
-        
+
         // Update CodeMap
-        codemap.traces = traces;
-        codemap.mermaid_diagram = mermaid_diagram;
-        
+        codemap.nodes = nodes;
+        codemap.edges = edges;
+
         Ok(codemap)
     }
-    
-    fn analyze_file(&self, file_path: &str, content: &str) -> Result<Vec<Location>> {
-        let mut locations = Vec::new();
+
+    fn analyze_file(
+        &self,
+        file_path: &str,
+        content: &str,
+        file_idx: usize,
+        node_counter: &mut usize,
+    ) -> Result<(Vec<Node>, Vec<Edge>)> {
+        let mut nodes = Vec::new();
+        let mut edges = Vec::new();
         let lines: Vec<&str> = content.lines().collect();
-        
+
+        let file_relative = file_path
+            .strip_prefix(&self.project_root)
+            .unwrap_or(file_path)
+            .trim_start_matches('/');
+
+        let file_name = Path::new(file_path)
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("Unknown");
+
+        let parent_node_id = format!("file_{}", file_idx);
+        let mut child_ids: Vec<String> = Vec::new();
+
+        // Create parent file node
+        let parent_node = Node {
+            node_id: parent_node_id.clone(),
+            title: file_name.to_string(),
+            summary: format!("文件: {}", file_name),
+            children: Vec::new(),
+            code_refs: vec![CodeRef {
+                path: file_relative.to_string(),
+                start_line: 1,
+                end_line: lines.len(),
+                symbol: None,
+            }],
+            trace_guide: TraceGuide {
+                short: format!("分析文件 {}", file_name),
+                long: format!(
+                    "## 文件概述\n\n文件 `{}` 包含 {} 行代码。\n\n## 代码节点\n\n以下是在此文件中识别的关键代码块。",
+                    file_path, lines.len()
+                ),
+            },
+        };
+        nodes.push(parent_node);
+
+        // Analyze lines for code nodes
+        let mut code_blocks: Vec<(usize, usize, String, String)> = Vec::new();
+
         for (line_num, line) in lines.iter().enumerate() {
             let line_number = line_num + 1;
             let trimmed = line.trim();
-            
-            // Detect Controller endpoints
-            if self.is_controller_endpoint(trimmed) {
-                locations.push(Location {
-                    id: format!("loc-{}", locations.len()),
-                    path: file_path.to_string(),
-                    line_number,
-                    line_content: line.to_string(),
-                    title: "Controller 入口".to_string(),
-                    description: "处理 HTTP 请求的入口点".to_string(),
-                });
-            }
-            
-            // Detect Service methods
-            if self.is_service_method(trimmed) {
-                locations.push(Location {
-                    id: format!("loc-{}", locations.len()),
-                    path: file_path.to_string(),
-                    line_number,
-                    line_content: line.to_string(),
-                    title: "Service 业务逻辑".to_string(),
-                    description: "核心业务处理逻辑".to_string(),
-                });
-            }
-            
-            // Detect Mapper/DAO operations
-            if self.is_mapper_operation(trimmed) {
-                locations.push(Location {
-                    id: format!("loc-{}", locations.len()),
-                    path: file_path.to_string(),
-                    line_number,
-                    line_content: line.to_string(),
-                    title: "数据库操作".to_string(),
-                    description: "数据持久化操作".to_string(),
-                });
-            }
-            
-            // Detect branching logic
-            if self.is_branching_logic(trimmed) {
-                locations.push(Location {
-                    id: format!("loc-{}", locations.len()),
-                    path: file_path.to_string(),
-                    line_number,
-                    line_content: line.to_string(),
-                    title: "分支判断".to_string(),
-                    description: "条件分支逻辑".to_string(),
-                });
-            }
-            
-            // Detect exception handling
-            if self.is_exception_handling(trimmed) {
-                locations.push(Location {
-                    id: format!("loc-{}", locations.len()),
-                    path: file_path.to_string(),
-                    line_number,
-                    line_content: line.to_string(),
-                    title: "异常处理".to_string(),
-                    description: "捕获和处理异常".to_string(),
-                });
-            }
-        }
-        
-        Ok(locations)
-    }
-    
-    fn is_controller_endpoint(&self, line: &str) -> bool {
-        line.contains("@RequestMapping") ||
-        line.contains("@GetMapping") ||
-        line.contains("@PostMapping") ||
-        line.contains("@PutMapping") ||
-        line.contains("@DeleteMapping") ||
-        line.contains("def ") && (line.contains("request") || line.contains("route")) ||
-        line.contains("app.") && (line.contains("get") || line.contains("post") || line.contains("put"))
-    }
-    
-    fn is_service_method(&self, line: &str) -> bool {
-        line.contains("def ") && !line.contains("__") ||
-        line.contains("public ") && (line.contains("void") || line.contains("return")) ||
-        line.contains("async def ") ||
-        line.contains("fn ") && line.contains("pub")
-    }
-    
-    fn is_mapper_operation(&self, line: &str) -> bool {
-        line.contains("SELECT") ||
-        line.contains("INSERT") ||
-        line.contains("UPDATE") ||
-        line.contains("DELETE") ||
-        line.contains(".find(") ||
-        line.contains(".create(") ||
-        line.contains(".update(") ||
-        line.contains(".delete(") ||
-        line.contains("execute_query") ||
-        line.contains("db.query")
-    }
-    
-    fn is_branching_logic(&self, line: &str) -> bool {
-        line.starts_with("if ") ||
-        line.starts_with("elif ") ||
-        line.starts_with("else:") ||
-        line.contains("switch ") ||
-        line.contains("case ") ||
-        line.contains("?") && line.contains(":")
-    }
-    
-    fn is_exception_handling(&self, line: &str) -> bool {
-        line.contains("try") ||
-        line.contains("catch") ||
-        line.contains("except") ||
-        line.contains("raise") ||
-        line.contains("throw")
-    }
-    
-    fn create_traces(&self, locations: &[Location], query: &str) -> Result<Vec<Trace>> {
-        let mut traces = Vec::new();
-        
-        // Group locations by file and order
-        let mut file_groups: HashMap<String, Vec<&Location>> = HashMap::new();
-        for loc in locations {
-            file_groups.entry(loc.path.clone()).or_insert_with(Vec::new).push(loc);
-        }
-        
-        // Sort each group by line number
-        for group in file_groups.values_mut() {
-            group.sort_by_key(|l| l.line_number);
-        }
-        
-        // Create traces from grouped locations
-        let mut trace_id = 1;
-        for (file_path, locs) in file_groups {
-            if locs.is_empty() {
+
+            if trimmed.is_empty() || trimmed.starts_with("//") || trimmed.starts_with("#") {
                 continue;
             }
-            
-            let file_name = Path::new(&file_path)
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("Unknown");
-            
-            let trace = Trace {
-                id: trace_id.to_string(),
-                title: format!("Phase {}: {}", trace_id, file_name),
-                description: format!("文件 {} 中的关键代码节点", file_name),
-                locations: locs.iter().map(|l| (*l).clone()).collect(),
-                trace_text_diagram: self.generate_text_diagram(&locs),
-                trace_guide: self.generate_trace_guide(&locs, &file_path, query),
+
+            let (node_type, description) = if self.is_controller_endpoint(trimmed) {
+                ("Controller 入口", "处理 HTTP 请求的入口点")
+            } else if self.is_service_method(trimmed) {
+                ("Service 业务逻辑", "核心业务处理逻辑")
+            } else if self.is_mapper_operation(trimmed) {
+                ("数据库操作", "数据持久化操作")
+            } else if self.is_branching_logic(trimmed) {
+                ("分支判断", "条件分支逻辑")
+            } else if self.is_exception_handling(trimmed) {
+                ("异常处理", "捕获和处理异常")
+            } else {
+                continue;
             };
-            
-            traces.push(trace);
-            trace_id += 1;
+
+            code_blocks.push((line_number, line_number, node_type.to_string(), description.to_string()));
         }
-        
-        // If no traces created, create a default one
-        if traces.is_empty() {
-            traces.push(Trace {
-                id: "1".to_string(),
-                title: "分析结果".to_string(),
-                description: "未检测到明显的代码节点".to_string(),
-                locations: Vec::new(),
-                trace_text_diagram: "未找到关键代码节点".to_string(),
-                trace_guide: "## Motivation\n\n尝试选择包含业务逻辑的文件进行分析。\n\n## Details\n\n当前分析的文件可能不包含可识别的代码模式。建议选择 Controller、Service 或 Mapper 层的文件。".to_string(),
+
+        // Group consecutive code blocks
+        let mut grouped_blocks: Vec<(usize, usize, String, String)> = Vec::new();
+        for block in code_blocks {
+            if let Some(last) = grouped_blocks.last_mut() {
+                if block.0 == last.1 + 1 && block.2 == last.2 {
+                    last.1 = block.1;
+                } else {
+                    grouped_blocks.push(block);
+                }
+            } else {
+                grouped_blocks.push(block);
+            }
+        }
+
+        // Create nodes for grouped blocks
+        for (start, end, node_type, description) in grouped_blocks {
+            *node_counter += 1;
+            let node_id = format!("node_{}", node_counter);
+            child_ids.push(node_id.clone());
+
+            let code_content: String = lines[(start - 1)..end]
+                .iter()
+                .take(5)
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty())
+                .collect::<Vec<_>>()
+                .join("; ");
+
+            let node = Node {
+                node_id: node_id.clone(),
+                title: format!("{}:{} - {}", file_name, start, node_type),
+                summary: description.to_string(),
+                children: Vec::new(),
+                code_refs: vec![CodeRef {
+                    path: file_relative.to_string(),
+                    start_line: start,
+                    end_line: end,
+                    symbol: None,
+                }],
+                trace_guide: TraceGuide {
+                    short: format!("{} ({})", description, start),
+                    long: format!(
+                        "## 代码块\n\n**位置**: `{}`:{}\n\n**类型**: {}\n\n**描述**: {}\n\n**代码**: ```\n{}\n```",
+                        file_relative, start, node_type, description, code_content
+                    ),
+                },
+            };
+
+            nodes.push(node);
+
+            // Create edge from parent to child
+            edges.push(Edge {
+                from: parent_node_id.clone(),
+                to: node_id,
+                edge_type: EdgeType::Calls,
             });
         }
-        
-        Ok(traces)
+
+        // Update parent node with children
+        if let Some(parent) = nodes.first_mut() {
+            parent.children = child_ids;
+        }
+
+        Ok((nodes, edges))
     }
-    
-    fn generate_text_diagram(&self, locations: &[&Location]) -> String {
-        let mut diagram = String::new();
-        
-        for (i, loc) in locations.iter().enumerate() {
-            let prefix = if i == locations.len() - 1 {
-                "└─".to_string()
-            } else {
-                "├─".to_string()
-            };
-            
-            diagram.push_str(&format!(
-                "{} {} ({}) < -- {}>\n",
-                prefix,
-                loc.title,
-                loc.line_number,
-                loc.id
-            ));
-            
-            if i < locations.len() - 1 {
-                diagram.push_str("│  ");
-            }
-        }
-        
-        diagram
+
+    fn is_controller_endpoint(&self, line: &str) -> bool {
+        line.contains("@RequestMapping")
+            || line.contains("@GetMapping")
+            || line.contains("@PostMapping")
+            || line.contains("@PutMapping")
+            || line.contains("@DeleteMapping")
+            || (line.contains("def ") && (line.contains("request") || line.contains("route")))
+            || (line.contains("app.") && (line.contains("get") || line.contains("post")))
     }
-    
-    fn generate_trace_guide(&self, locations: &[&Location], file_path: &str, query: &str) -> String {
-        let mut guide = String::new();
-        
-        guide.push_str("## Motivation\n\n");
-        guide.push_str(&format!(
-            "此流程分析文件 {}，响应查询 '{}'。目标是理解代码的执行路径和关键决策点。\n\n",
-            file_path, query
-        ));
-        
-        guide.push_str("## Details\n\n");
-        
-        if locations.is_empty() {
-            guide.push_str("未检测到关键的代码节点。这可能是因为：\n");
-            guide.push_str("- 文件不包含业务逻辑\n");
-            guide.push_str("- 代码风格不符合常见的命名规范\n");
-            guide.push_str("- 需要更多上下文文件\n");
-        } else {
-            guide.push_str("代码执行流程：\n\n");
-            
-            for loc in locations {
-                guide.push_str(&format!("- **[{}]** {} (行 {})\n", loc.id, loc.title, loc.line_number));
-                guide.push_str(&format!("  {}\n\n", loc.description));
-            }
-            
-            guide.push_str("### 关键观察\n\n");
-            guide.push_str("- 代码遵循分层架构模式\n");
-            guide.push_str("- 包含清晰的入口点和业务逻辑分离\n");
-            guide.push_str("- 数据操作集中在 Mapper/DAO 层\n");
-        }
-        
-        guide
+
+    fn is_service_method(&self, line: &str) -> bool {
+        (line.contains("def ") && !line.contains("__"))
+            || (line.contains("public ") && (line.contains("void") || line.contains("return")))
+            || line.contains("async def ")
+            || (line.contains("fn ") && line.contains("pub"))
     }
-    
-    fn generate_mermaid_diagram(&self, traces: &[Trace]) -> String {
-        if traces.is_empty() {
-            return "graph TB\n  A[开始] --> B[结束]".to_string();
-        }
-        
-        let mut diagram = String::from("graph TB\n");
-        
-        // Add subgraphs for each trace
-        for trace in traces {
-            diagram.push_str(&format!("  subgraph {}[{}]\n", trace.id, trace.title));
-            
-            for loc in &trace.locations {
-                let node_id = format!("N{}", loc.id.replace("-", "_"));
-                diagram.push_str(&format!(
-                    "    {}([\"{}<br/>{}:{}\"])\n",
-                    node_id, loc.title, loc.path, loc.line_number
-                ));
-            }
-            
-            diagram.push_str("  end\n");
-        }
-        
-        // Connect traces
-        for i in 0..traces.len().saturating_sub(1) {
-            let current = &traces[i];
-            let next = &traces[i + 1];
-            
-            let last_loc = current.locations.last();
-            let first_loc = next.locations.first();
-            
-            if let (Some(last), Some(first)) = (last_loc, first_loc) {
-                let from_node = format!("N{}", last.id.replace("-", "_"));
-                let to_node = format!("N{}", first.id.replace("-", "_"));
-                diagram.push_str(&format!("  {} --> {}\n", from_node, to_node));
-            }
-        }
-        
-        diagram
+
+    fn is_mapper_operation(&self, line: &str) -> bool {
+        line.contains("SELECT")
+            || line.contains("INSERT")
+            || line.contains("UPDATE")
+            || line.contains("DELETE")
+            || line.contains(".find(")
+            || line.contains(".create(")
+            || line.contains(".update(")
+            || line.contains(".delete(")
+            || line.contains("execute_query")
+            || line.contains("db.query")
+    }
+
+    fn is_branching_logic(&self, line: &str) -> bool {
+        line.starts_with("if ")
+            || line.starts_with("elif ")
+            || line.starts_with("else:")
+            || line.contains("switch ")
+            || line.contains("case ")
+            || (line.contains("?") && line.contains(":"))
+    }
+
+    fn is_exception_handling(&self, line: &str) -> bool {
+        line.contains("try") || line.contains("catch") || line.contains("except")
     }
 }

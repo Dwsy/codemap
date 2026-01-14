@@ -4,7 +4,6 @@
 mod commands;
 mod storage;
 mod analyzer;
-mod codemap;
 mod codemap_v2;
 mod executor;
 mod code_browser;

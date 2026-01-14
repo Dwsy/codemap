@@ -1,5 +1,5 @@
 use crate::analyzer::Analyzer;
-use crate::codemap::CodeMap;
+use crate::codemap_v2::{CodeMap, ModelTier};
 use crate::storage::Storage;
 use tauri::command;
 use anyhow::Result;
@@ -21,10 +21,15 @@ pub async fn analyze_code(
     files: Vec<String>,
     query: String,
     project_root: String,
+    model_tier: Option<String>,
 ) -> Result<CodeMap, String> {
     let analyzer = Analyzer::new(project_root.clone());
+    let tier = match model_tier.as_deref() {
+        Some("smart") => ModelTier::Smart,
+        _ => ModelTier::Fast,
+    };
     analyzer
-        .analyze(files, query)
+        .analyze(files, query, tier)
         .map_err(|e| e.to_string())
 }
 

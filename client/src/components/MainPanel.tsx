@@ -1,23 +1,35 @@
-import React from 'react'
-import { useCodeMapStore } from '@stores/codemapStore'
-import { Icon, LoadingSpinner, StatusIcon } from '@components/icons'
-import { TreeView } from '@components/TreeView'
-import GraphView from '@components/GraphView'
-import NodeDetails from '@components/NodeDetails'
-import { Button } from '@components/ui/Button'
-import { Input } from '@components/ui/Input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/Select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@components/ui/Dialog'
-import { ModelTier } from 'codemap'
+import React from 'react';
+import { useCodeMapStore } from '@stores/codemapStore';
+import { Icon, LoadingSpinner, StatusIcon } from '@components/icons';
+import { TreeView } from '@components/TreeView';
+import GraphView from '@components/GraphView';
+import NodeDetails from '@components/NodeDetails';
+import { Button } from '@components/ui/Button';
+import { Input } from '@components/ui/Input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@components/ui/Select';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@components/ui/Dialog';
+import { ModelTier } from 'codemap';
 
 /**
  * MainPanel 组件
  * 包含树/图视图和节点详情面板
  */
 const MainPanel: React.FC = () => {
-  const { 
-    currentCodeMap, 
-    isLoading, 
+  const {
+    currentCodeMap,
+    isLoading,
     error,
     viewMode,
     selectedNodeId,
@@ -28,31 +40,31 @@ const MainPanel: React.FC = () => {
     showCreateDialog,
     setShowCreateDialog,
     initialPrompt,
-    setInitialPrompt
-  } = useCodeMapStore()
-  
-  const [prompt, setPrompt] = React.useState('')
-  const [modelTier, setModelTier] = React.useState<ModelTier>(ModelTier.Fast)
-  const [selectedFiles, setSelectedFiles] = React.useState<string[]>([])
+    setInitialPrompt,
+  } = useCodeMapStore();
+
+  const [prompt, setPrompt] = React.useState('');
+  const [modelTier, setModelTier] = React.useState<ModelTier>(ModelTier.Fast);
+  const [selectedFiles, setSelectedFiles] = React.useState<string[]>([]);
 
   // 对话框关闭时清除 initialPrompt
   React.useEffect(() => {
     if (!showCreateDialog && initialPrompt) {
-      setInitialPrompt('')
-      setPrompt('')
+      setInitialPrompt('');
+      setPrompt('');
     }
-  }, [showCreateDialog, initialPrompt, setInitialPrompt])
+  }, [showCreateDialog, initialPrompt, setInitialPrompt]);
 
   // 同步 Store 中的 initialPrompt 到本地状态
   React.useEffect(() => {
     if (initialPrompt && showCreateDialog) {
-      setPrompt(initialPrompt)
+      setPrompt(initialPrompt);
     }
-  }, [initialPrompt, showCreateDialog])
+  }, [initialPrompt, showCreateDialog]);
 
   // 模拟项目根目录
-  const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap'
-  
+  const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
+
   return (
     <>
       {/* Content */}
@@ -61,32 +73,46 @@ const MainPanel: React.FC = () => {
           <EmptyState onOpenCreate={() => setShowCreateDialog(true)} />
         </div>
       )}
-      
+
       {isLoading && (
         <div className="flex-1 flex items-center justify-center bg-muted/30">
           <LoadingState />
         </div>
       )}
-      
+
       {error && (
         <div className="flex-1 flex items-center justify-center bg-muted/30">
           <ErrorState error={error} />
         </div>
       )}
-      
+
       {currentCodeMap && (
         <div className="flex-1 flex overflow-hidden">
           {/* Tree/Graph View */}
-          <div 
+          <div
             className="flex-1 overflow-hidden"
-            style={{ width: panelLayout.showDetails ? `calc(100% - ${panelLayout.detailsWidth}px)` : '100%' }}
+            style={{
+              width: panelLayout.showDetails
+                ? `calc(100% - ${panelLayout.detailsWidth}px)`
+                : '100%',
+            }}
           >
-            {viewMode === 'tree' ? <TreeView nodes={currentCodeMap?.nodes || []} selectedNodeId={selectedNodeId || undefined} onNodeClick={(node) => setSelectedNodeId('node_id' in node ? node.node_id : node.id)} /> : <GraphView />}
+            {viewMode === 'tree' ? (
+              <TreeView
+                nodes={currentCodeMap?.nodes || []}
+                selectedNodeId={selectedNodeId || undefined}
+                onNodeClick={(node) =>
+                  setSelectedNodeId('node_id' in node ? node.node_id : node.id)
+                }
+              />
+            ) : (
+              <GraphView />
+            )}
           </div>
-          
+
           {/* Node Details Panel */}
           {panelLayout.showDetails && selectedNodeId && (
-            <div 
+            <div
               className="border-l border-border bg-card"
               style={{ width: panelLayout.detailsWidth }}
             >
@@ -95,7 +121,7 @@ const MainPanel: React.FC = () => {
           )}
         </div>
       )}
-      
+
       {/* Create CodeMap Dialog - 始终渲染 */}
       <CreateCodeMapDialog
         open={showCreateDialog}
@@ -106,14 +132,14 @@ const MainPanel: React.FC = () => {
         onModelTierChange={setModelTier}
       />
     </>
-  )
-}
+  );
+};
 
 /**
  * Empty State
  */
 interface EmptyStateProps {
-  onOpenCreate: () => void
+  onOpenCreate: () => void;
 }
 
 const EmptyState: React.FC<EmptyStateProps> = ({ onOpenCreate }) => {
@@ -124,21 +150,26 @@ const EmptyState: React.FC<EmptyStateProps> = ({ onOpenCreate }) => {
       </div>
       <h2 className="text-2xl font-semibold mb-2">Create Your First CodeMap</h2>
       <p className="text-muted-foreground mb-6">
-        Generate a visual map of your code execution flow to understand how components work together.
+        Generate a visual map of your code execution flow to understand how components work
+        together.
       </p>
       <div className="flex flex-col gap-3">
         <Button size="lg" onClick={onOpenCreate}>
           <Icon.Plus size={18} className="mr-2" />
           Create CodeMap
         </Button>
-        <Button variant="outline" size="lg" onClick={() => window.open('https://github.com', '_blank')}>
+        <Button
+          variant="outline"
+          size="lg"
+          onClick={() => window.open('https://github.com', '_blank')}
+        >
           <Icon.BookOpen size={18} className="mr-2" />
           View Documentation
         </Button>
       </div>
     </div>
-  )
-}
+  );
+};
 
 /**
  * Loading State
@@ -148,18 +179,16 @@ const LoadingState: React.FC = () => {
     <div className="text-center">
       <LoadingSpinner size={48} className="mx-auto mb-4 text-primary" />
       <h2 className="text-xl font-semibold mb-2">Generating CodeMap</h2>
-      <p className="text-muted-foreground">
-        Analyzing code and building the map...
-      </p>
+      <p className="text-muted-foreground">Analyzing code and building the map...</p>
     </div>
-  )
-}
+  );
+};
 
 /**
  * Error State
  */
 interface ErrorStateProps {
-  error: string
+  error: string;
 }
 
 const ErrorState: React.FC<ErrorStateProps> = ({ error }) => {
@@ -173,19 +202,19 @@ const ErrorState: React.FC<ErrorStateProps> = ({ error }) => {
         Try Again
       </Button>
     </div>
-  )
-}
+  );
+};
 
 /**
  * Create CodeMap Dialog
  */
 interface CreateCodeMapDialogProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
-  prompt: string
-  onPromptChange: (prompt: string) => void
-  modelTier: ModelTier
-  onModelTierChange: (tier: ModelTier) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  prompt: string;
+  onPromptChange: (prompt: string) => void;
+  modelTier: ModelTier;
+  onModelTierChange: (tier: ModelTier) => void;
 }
 
 const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
@@ -196,40 +225,38 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
   modelTier,
   onModelTierChange,
 }) => {
-  const { createCodeMap } = useCodeMapStore()
-  const [isLoading, setIsLoading] = React.useState(false)
-  const [selectedFiles, setSelectedFiles] = React.useState<string[]>([])
-  const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap'
-  
+  const { createCodeMap } = useCodeMapStore();
+  const [isLoading, setIsLoading] = React.useState(false);
+  const [selectedFiles, setSelectedFiles] = React.useState<string[]>([]);
+  const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
+
   const handleCreate = async () => {
-    if (!prompt.trim()) return
-    
-    setIsLoading(true)
+    if (!prompt.trim()) return;
+
+    setIsLoading(true);
     try {
-      await createCodeMap(prompt, selectedFiles, projectRoot, modelTier)
-      onOpenChange(false)
+      await createCodeMap(prompt, selectedFiles, projectRoot, modelTier);
+      onOpenChange(false);
       // 不要清空 prompt，让父组件处理
-      setSelectedFiles([])
+      setSelectedFiles([]);
     } catch (error) {
-      console.error('Failed to create codemap:', error)
+      console.error('Failed to create codemap:', error);
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
-  
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New CodeMap</DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 py-4">
           {/* Prompt Input */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              What do you want to understand?
-            </label>
+            <label className="text-sm font-medium">What do you want to understand?</label>
             <Input
               placeholder="e.g., 'Trace the user authentication flow from login to token issuance'"
               value={prompt}
@@ -240,12 +267,10 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
               Describe the code flow or component you want to explore
             </p>
           </div>
-          
+
           {/* Files Selection (Demo) */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Select Files (Demo Mode)
-            </label>
+            <label className="text-sm font-medium">Select Files (Demo Mode)</label>
             <div className="p-3 bg-muted rounded-lg text-sm">
               <p className="text-muted-foreground mb-2">
                 In demo mode, using sample files from the project:
@@ -269,20 +294,16 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
               Full file selection will be implemented in future versions
             </p>
           </div>
-          
+
           {/* Model Tier Selection */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">
-              Analysis Mode
-            </label>
-            <Select 
-              value={modelTier} 
+            <label className="text-sm font-medium">Analysis Mode</label>
+            <Select
+              value={modelTier}
               onValueChange={(v: string) => onModelTierChange(v as ModelTier)}
             >
               <SelectTrigger>
-                <SelectValue>
-                  {modelTier === ModelTier.Fast ? 'Fast' : 'Smart'}
-                </SelectValue>
+                <SelectValue>{modelTier === ModelTier.Fast ? 'Fast' : 'Smart'}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ModelTier.Fast}>
@@ -311,19 +332,12 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
             </Select>
           </div>
         </div>
-        
+
         <div className="flex justify-end gap-2">
-          <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
             Cancel
           </Button>
-          <Button
-            onClick={handleCreate}
-            disabled={!prompt.trim() || isLoading}
-          >
+          <Button onClick={handleCreate} disabled={!prompt.trim() || isLoading}>
             {isLoading ? (
               <>
                 <LoadingSpinner size={16} className="mr-2" />
@@ -339,7 +353,7 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default MainPanel
+export default MainPanel;
