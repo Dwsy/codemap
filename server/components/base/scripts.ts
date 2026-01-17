@@ -63,14 +63,14 @@ export function getDashboardScript(currentProject?: string): string {
         if (!res.ok) throw new Error('Load failed');
         const cm = await res.json();
         viewer.innerHTML = '';
-        if (typeof CodeMapViewer !== 'undefined') {
+        if (typeof window.CodeMapViewer !== 'undefined') {
           if (currentViewer) {
             currentViewer.destroy();
             currentViewer = null;
           }
-          currentViewer = new CodeMapViewer(viewer, { codemap: cm, isFragment: true });
-          if (typeof mermaid !== 'undefined') setTimeout(() => mermaid.init(undefined, viewer.querySelectorAll('.mermaid')), 100);
+          currentViewer = new window.CodeMapViewer(viewer, { codemap: cm, isFragment: true });
         } else {
+          console.error('CodeMapViewer not available on window object');
           viewer.innerHTML = '<div class="inline-viewer-empty">Component not loaded</div>';
         }
       } catch (e) { viewer.innerHTML = '<div class="inline-viewer-empty">Failed to load CodeMap: ' + e.message + '</div>'; }
@@ -89,13 +89,14 @@ export function getViewScript(): string {
     let viewViewer = null;
     document.addEventListener('DOMContentLoaded', () => {
       const viewerEl = document.getElementById('codemap-viewer');
-      if (viewerEl && typeof CodeMapViewer !== 'undefined') {
+      if (viewerEl && typeof window.CodeMapViewer !== 'undefined') {
         const codemapData = viewerEl.getAttribute('data-codemap');
         if (codemapData) {
           const codemap = JSON.parse(codemapData);
-          viewViewer = new CodeMapViewer(viewerEl, { codemap: codemap, isFragment: false });
-          if (typeof mermaid !== 'undefined') setTimeout(() => mermaid.init(undefined, viewerEl.querySelectorAll('.mermaid')), 100);
+          viewViewer = new window.CodeMapViewer(viewerEl, { codemap: codemap, isFragment: false });
         }
+      } else {
+        console.error('CodeMapViewer not available on window object');
       }
     });
     Prism.highlightAll();
