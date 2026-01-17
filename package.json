@@ -1,19 +1,21 @@
 {
   "name": "codemap-server",
-  "version": "1.0.0",
-  "description": "CodeMap HTTP Server - 代码地图可视化服务",
+  "version": "2.0.0",
+  "description": "CodeMap HTTP Server - 代码地图可视化服务（Vue 3 重构版）",
   "type": "module",
   "scripts": {
-    "start": "bun run build:components && bun run server/index.ts",
-    "dev": "bun run build:components && bun run --watch server/index.ts",
-    "build:components": "bun build server/components/lit/codemap-viewer.ts --outdir dist --target browser --external lit-html"
+    "start": "bun run server/index.ts",
+    "dev": "bun run --watch server/index.ts",
+    "dev:client": "cd client && bun run dev",
+    "dev:vapor": "cd client && VITE_ENABLE_VAPOR=true bun run dev",
+    "build": "cd client && bun run build",
+    "test": "cd client && bun run test"
   },
   "dependencies": {
-    "@antv/infographic": "^0.2.10",
     "hono": "^4.0.0",
-    "lit-html": "^3.1.0",
     "markdown-it": "^14.1.0",
-    "markdown-it-infographic": "1.0.0"
+    "@md-reader/markdown-it-mermaid": "^0.6.0-beta.0",
+    "markdown-it-infographic": "^1.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest"
