@@ -32,13 +32,29 @@ export function wrapHtmlDocument({ title, type, content, currentProject }: HtmlD
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script>
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({ 
+        startOnLoad: false, 
+        theme: 'default',
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: 'basis'
+        },
+        securityLevel: 'loose',
+        logLevel: 'error'
+      });
+    }
+  </script>
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    }
+  </script>
   <script type="module">
-    import { render } from 'https://cdn.jsdelivr.net/npm/lit-html@3.1.0/lit-html.js';
-    window.renderLit = render;
-    import { unsafeHTML } from 'https://cdn.jsdelivr.net/npm/lit-html@3.1.0/directives/unsafe-html.js';
-    window.unsafeHTML = unsafeHTML;
     import CodeMapViewer from '/components/codemap-viewer.js';
     window.CodeMapViewer = CodeMapViewer;
+    console.log('Dashboard: CodeMapViewer loaded:', typeof CodeMapViewer, CodeMapViewer);
   </script>
   <script>${getDashboardScript(currentProject)}</script>
 </body>
@@ -63,13 +79,25 @@ export function wrapHtmlDocument({ title, type, content, currentProject }: HtmlD
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+  <script>
+    if (typeof mermaid !== 'undefined') {
+      mermaid.initialize({ 
+        startOnLoad: false, 
+        theme: 'default',
+        flowchart: {
+          useMaxWidth: true,
+          htmlLabels: true,
+          curve: 'basis'
+        },
+        securityLevel: 'loose',
+        logLevel: 'error'
+      });
+    }
+  </script>
   <script type="module">
-    import { render } from 'https://cdn.jsdelivr.net/npm/lit-html@3.1.0/lit-html.js';
-    window.renderLit = render;
-    import { unsafeHTML } from 'https://cdn.jsdelivr.net/npm/lit-html@3.1.0/directives/unsafe-html.js';
-    window.unsafeHTML = unsafeHTML;
     import CodeMapViewer from '/components/codemap-viewer.js';
     window.CodeMapViewer = CodeMapViewer;
+    console.log('View: CodeMapViewer loaded:', typeof CodeMapViewer, CodeMapViewer);
   </script>
   <script>${getViewScript()}</script>
 </body>
