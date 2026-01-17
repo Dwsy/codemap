@@ -8,7 +8,7 @@ export const monacoConfig = {
 // 在应用启动时配置
 if (typeof window !== 'undefined') {
   (window as any).MonacoEnvironment = {
-    getWorker: function (workerId: string, label: string) {
+    getWorker: function (_workerId: string, _label: string) {
       return new Worker(
         new URL('../node_modules/monaco-editor/esm/vs/editor/editor.worker.js', import.meta.url),
         {

@@ -1,18 +1,16 @@
 import React, { useState } from 'react';
 import { useCodeMapStore } from '@stores/codemapStore';
-import { Icon, getFileIcon } from '@components/icons';
+import { Icon } from '@components/icons';
 import { Button } from '@components/ui/Button';
 import { Input } from '@components/ui/Input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/Tabs';
 import { ScrollArea } from '@components/ui/ScrollArea';
+import { Badge } from '@components/ui/Badge';
+import { EmptyState } from '@components/ui/EmptyState';
 import { HistoryEditDialog } from './HistoryEditDialog';
 import { open } from '@tauri-apps/plugin-dialog';
 import type { CodeMapMeta } from 'codemap';
 
-/**
- * Sidebar 组件
- * 包含历史记录和建议主题
- */
 const Sidebar: React.FC = () => {
   const {
     history,
@@ -33,7 +31,6 @@ const Sidebar: React.FC = () => {
   const [selectedItem, setSelectedItem] = useState<CodeMapMeta | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
-  // 过滤历史记录和建议主题
   const filteredHistory = history.filter(
     (item) =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -52,9 +49,15 @@ const Sidebar: React.FC = () => {
     setShowCreateDialog(true);
   };
 
-  const handleEditClick = (item: CodeMapMeta) => {
+  const handleEditClick = (item: CodeMapMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
     setSelectedItem(item);
     setEditDialogOpen(true);
+  };
+
+  const handleDeleteClick = (item: CodeMapMeta, e: React.MouseEvent) => {
+    e.stopPropagation();
+    removeFromHistory(item.id);
   };
 
   const handleImport = async () => {
@@ -82,53 +85,55 @@ const Sidebar: React.FC = () => {
 
   return (
     <aside className="w-80 border-r border-border flex flex-col bg-card">
-      {/* Search */}
-      <div className="p-3 border-b border-border">
+      <div className="p-3">
         <div className="relative">
           <Icon.Search
             size={16}
             className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <Input
-            placeholder="Search codemaps..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9"
+            leftIcon="Search"
           />
         </div>
       </div>
 
-      {/* Tabs */}
       <Tabs
-        defaultValue="suggestions"
+        value={activeTab}
         onValueChange={(v) => setActiveTab(v as any)}
         className="flex-1 flex flex-col"
       >
-        <TabsList className="grid w-full grid-cols-2 m-0 rounded-none border-b border-border">
-          <TabsTrigger value="suggestions" className="text-xs">
-            <Icon.Star size={14} className="mr-1" />
+        <TabsList className="grid w-full grid-cols-2 m-0 rounded-none border-b border-border gap-0">
+          <TabsTrigger value="suggestions" className="text-xs gap-1.5">
+            <Icon.Star size={14} />
             Suggestions
           </TabsTrigger>
-          <TabsTrigger value="history" className="text-xs">
-            <Icon.Clock size={14} className="mr-1" />
+          <TabsTrigger value="history" className="text-xs gap-1.5">
+            <Icon.Clock size={14} />
             History
           </TabsTrigger>
         </TabsList>
-        <TabsContent value="suggestions" className="flex-1 flex-1 m-0">
-          <ScrollArea className="h-[calc(100vh-8rem)]">
+
+        <TabsContent value="suggestions" className="flex-1 m-0 overflow-hidden">
+          <ScrollArea>
             <div className="p-3 space-y-2">
               {filteredSuggestions.length === 0 ? (
-                <div className="text-center py-8 text-sm text-muted-foreground">
-                  <Icon.BookOpen size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>No suggestions found</p>
-                  <p className="text-xs mt-1">Try a different search term</p>
-                </div>
+                <EmptyState
+                  icon="Star"
+                  title="No suggestions"
+                  description={
+                    searchQuery ? 'Try a different search term' : 'Start by analyzing your code'
+                  }
+                  variant="minimal"
+                />
               ) : (
                 filteredSuggestions.map((topic) => (
                   <SuggestedTopicItem
                     key={topic.id}
                     topic={topic}
-                    onClick={() => handleSuggestedTopicClick(topic)}
+                    onClick={handleSuggestedTopicClick}
                   />
                 ))
               )}
@@ -136,8 +141,7 @@ const Sidebar: React.FC = () => {
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="history" className="flex-1 flex-1 m-0">
-          {/* Import Button */}
+        <TabsContent value="history" className="flex-1 m-0 overflow-hidden flex flex-col">
           <div className="p-2 border-b border-border">
             <Button
               variant="outline"
@@ -154,27 +158,29 @@ const Sidebar: React.FC = () => {
               ) : (
                 <>
                   <Icon.Upload size={14} className="mr-2" />
-                  Import CodeMap
+                  Import
                 </>
               )}
             </Button>
           </div>
-          <ScrollArea className="h-[calc(100vh-11rem)]">
+
+          <ScrollArea>
             <div className="p-3 space-y-2">
               {filteredHistory.length === 0 ? (
-                <div className="text-center py-8 text-sm text-muted-foreground">
-                  <Icon.Clock size={32} className="mx-auto mb-2 opacity-50" />
-                  <p>No history found</p>
-                  <p className="text-xs mt-1">Create your first codemap</p>
-                </div>
+                <EmptyState
+                  icon="Clock"
+                  title="No history"
+                  description={searchQuery ? 'No matching codemaps' : 'Create your first codemap'}
+                  variant="minimal"
+                />
               ) : (
                 filteredHistory.map((item) => (
                   <HistoryItem
                     key={item.id}
                     item={item}
                     onClick={() => loadCodeMapById(item.id)}
-                    onDelete={() => removeFromHistory(item.id)}
-                    onEdit={() => handleEditClick(item)}
+                    onEdit={handleEditClick}
+                    onDelete={handleDeleteClick}
                   />
                 ))
               )}
@@ -183,7 +189,6 @@ const Sidebar: React.FC = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Dialog */}
       <HistoryEditDialog
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
@@ -195,9 +200,6 @@ const Sidebar: React.FC = () => {
   );
 };
 
-/**
- * 建议主题项
- */
 interface SuggestedTopicItemProps {
   topic: import('codemap').SuggestedTopic;
   onClick: (topic: import('codemap').SuggestedTopic) => void;
@@ -206,16 +208,13 @@ interface SuggestedTopicItemProps {
 const SuggestedTopicItem: React.FC<SuggestedTopicItemProps> = ({ topic, onClick }) => {
   return (
     <button
+      type="button"
       onClick={() => onClick(topic)}
-      className="w-full text-left p-3 rounded-lg hover:bg-muted transition-colors group"
+      className="w-full text-left p-3 rounded-lg hover:bg-accent transition-colors group"
     >
       <div className="flex items-start gap-2">
-        <div className="flex-shrink-0 mt-0.5">
-          {topic.icon ? (
-            <span className="text-lg">{topic.icon}</span>
-          ) : (
-            <Icon.Star size={16} className="text-primary" />
-          )}
+        <div className="flex-shrink-0 mt-0.5 text-primary">
+          {topic.icon ? <span className="text-lg">{topic.icon}</span> : <Icon.Star size={16} />}
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium line-clamp-2 group-hover:text-primary transition-colors">
@@ -228,51 +227,44 @@ const SuggestedTopicItem: React.FC<SuggestedTopicItemProps> = ({ topic, onClick 
   );
 };
 
-/**
- * 历史记录项
- */
 interface HistoryItemProps {
   item: import('codemap').CodeMapMeta;
   onClick: () => void;
-  onDelete: () => void;
-  onEdit: () => void;
+  onEdit: (item: CodeMapMeta, e: React.MouseEvent) => void;
+  onDelete: (item: CodeMapMeta, e: React.MouseEvent) => void;
 }
 
-const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEdit }) => {
-  const [showActions, setShowActions] = useState(false);
-
+const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onEdit, onDelete }) => {
   return (
-    <div
-      className="group relative p-3 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+    <button
+      type="button"
       onClick={onClick}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      className="group relative w-full text-left p-3 rounded-lg hover:bg-accent transition-colors"
     >
       <div className="flex items-start gap-2">
-        <div className="flex-shrink-0 mt-0.5">
-          <Icon.Map size={16} className="text-primary" />
+        <div className="flex-shrink-0 mt-0.5 text-primary">
+          <Icon.Map size={16} />
         </div>
         <div className="flex-1 min-w-0">
           <h4 className="text-sm font-medium line-clamp-2">{item.title}</h4>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-1">{item.query}</p>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <span className="text-xs text-muted-foreground">
               {new Date(item.created_at).toLocaleDateString()}
             </span>
             {item.tags.length > 0 && (
               <>
                 <span className="text-xs text-muted-foreground">•</span>
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap">
                   {item.tags.slice(0, 2).map((tag) => (
-                    <span
-                      key={tag}
-                      className="text-xs px-1.5 py-0.5 bg-primary/10 text-primary rounded"
-                    >
+                    <Badge key={tag} variant="secondary" className="text-xs">
                       {tag}
-                    </span>
+                    </Badge>
                   ))}
                   {item.tags.length > 2 && (
-                    <span className="text-xs text-muted-foreground">+{item.tags.length - 2}</span>
+                    <Badge variant="outline" className="text-xs">
+                      +{item.tags.length - 2}
+                    </Badge>
                   )}
                 </div>
               </>
@@ -281,32 +273,25 @@ const HistoryItem: React.FC<HistoryItemProps> = ({ item, onClick, onDelete, onEd
         </div>
       </div>
 
-      {/* Action Buttons */}
-      {showActions && (
-        <div className="absolute top-2 right-2 flex gap-1">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onEdit();
-            }}
-            className="p-1 rounded hover:bg-primary/10 hover:text-primary transition-colors"
-            title="Edit"
-          >
-            <Icon.Edit size={14} />
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete();
-            }}
-            className="p-1 rounded hover:bg-destructive/10 hover:text-destructive transition-colors"
-            title="Delete"
-          >
-            <Icon.Trash2 size={14} />
-          </button>
-        </div>
-      )}
-    </div>
+      <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+        <button
+          type="button"
+          onClick={(e) => onEdit(item, e)}
+          className="p-1 rounded-md hover:bg-primary/10 hover:text-primary transition-colors"
+          title="Edit"
+        >
+          <Icon.Edit size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={(e) => onDelete(item, e)}
+          className="p-1 rounded-md hover:bg-destructive/10 hover:text-destructive transition-colors"
+          title="Delete"
+        >
+          <Icon.Trash2 size={14} />
+        </button>
+      </div>
+    </button>
   );
 };
 

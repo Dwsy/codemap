@@ -1,6 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
+import { ThemeProvider } from './components/theme/ThemeProvider';
 import './index.css';
 
 // 拦截并阻止 source map 请求
@@ -26,6 +27,8 @@ XMLHttpRequest.prototype.open = function (method: string, url: string | URL, ...
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider defaultTheme="dark" storageKey="codemap-theme">
+      <App />
+    </ThemeProvider>
   </React.StrictMode>
 );

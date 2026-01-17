@@ -26,18 +26,21 @@ codemap/
 ## 🎨 设计规范
 
 ### 视觉隐喻
+
 - 中心节点（"C"）代表 CodeMap 核心功能
 - 顶部两个输入节点代表代码分析入口
 - 底部输出节点代表可视化结果
 - 连接线体现代码流程可视化特性
 
 ### 色彩方案（Tauri 深色主题）
+
 - **背景**：深灰 `#1C1C1E`
 - **主色调**：琥珀色 `#FFC107`（Tauri 品牌色）
 - **辅助色**：蓝色 `#0A84FF`、绿色 `#30D158`
 - **节点**：深灰 `#2C2C2E` 带彩色边框
 
 ### 技术规范
+
 - ✅ 使用 `viewBox` 确保可缩放性
 - ✅ 包含 XML 命名空间
 - ✅ 内联 CSS 样式
@@ -61,6 +64,7 @@ node generate-icons.js
 ```
 
 **优点**：
+
 - 使用项目已有的 `sharp` 依赖
 - 无需额外安装工具
 - 支持所有尺寸
@@ -76,27 +80,32 @@ python3 generate-tauri-icons.py   # 生成多尺寸 PNG
 ```
 
 **依赖**：
+
 - ImageMagick: `brew install imagemagick`
 - 或 librsvg: `brew install librsvg`
 
 ## 📋 工作流程
 
 ### 1. 设计分析
+
 - 确定视觉隐喻（流程节点 + 连接线）
 - 制定色彩方案（Hex 色值）
 - 规划几何元素（圆形、路径、网格）
 
 ### 2. SVG 配置
+
 - 定义标准画布尺寸（512x512）
 - 使用 `viewBox` 确保可缩放性
 - 包含正确的 XML 命名空间
 
 ### 3. Python 实现
+
 - 编写自包含 Python 脚本
 - 使用标准库（无外部依赖）
 - 输出/保存为 `logo.svg`
 
 ### 4. 多尺寸生成
+
 - 使用 Node.js + sharp 转换为 PNG
 - 生成所有必需尺寸（32x32 到 1024x1024）
 - 配置 Tauri 项目引用图标
@@ -125,12 +134,14 @@ python3 generate-tauri-icons.py   # 生成多尺寸 PNG
 ## 🚀 测试图标
 
 ### 开发模式
+
 ```bash
 cd /Users/dengwenyu/.pi/agent/skills/codemap/client
 pnpm run tauri:dev
 ```
 
 ### 构建应用
+
 ```bash
 cd /Users/dengwenyu/.pi/agent/skills/codemap/client
 pnpm run tauri:build
@@ -149,14 +160,14 @@ pnpm run tauri:build
 
 ## 📐 图标尺寸说明
 
-| 尺寸 | 用途 |
-|------|------|
-| 32x32 | Windows 任务栏、macOS Dock（小） |
-| 64x64 | macOS Dock（中）、Linux 应用菜单 |
-| 128x128 | macOS Finder、Windows 资源管理器 |
-| 256x256 | macOS Retina 显示、Windows 大图标 |
-| 512x512 | 高分辨率显示、源文件 |
-| 1024x1024 | App Store、应用商店预览 |
+| 尺寸      | 用途                              |
+| --------- | --------------------------------- |
+| 32x32     | Windows 任务栏、macOS Dock（小）  |
+| 64x64     | macOS Dock（中）、Linux 应用菜单  |
+| 128x128   | macOS Finder、Windows 资源管理器  |
+| 256x256   | macOS Retina 显示、Windows 大图标 |
+| 512x512   | 高分辨率显示、源文件              |
+| 1024x1024 | App Store、应用商店预览           |
 
 ## 🎯 设计原则
 
@@ -168,16 +179,19 @@ pnpm run tauri:build
 ## 🔍 故障排查
 
 ### 问题：图标未显示
+
 - 检查 `tauri.conf.json` 中的图标路径是否正确
 - 确保所有尺寸的 PNG 文件都已生成
 - 清理构建缓存：`rm -rf src-tauri/target`
 
 ### 问题：图标模糊
+
 - 确保使用了正确的尺寸
 - 检查 SVG 源文件的 `viewBox` 设置
 - 重新生成图标并清理缓存
 
 ### 问题：sharp 模块未找到
+
 - 运行 `pnpm install` 安装依赖
 - 确认 `sharp` 在 `devDependencies` 中
 

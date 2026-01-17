@@ -479,7 +479,6 @@ export const useCodeMapStore = create<CodeMapStore>()(
       });
 
       try {
-        // Demo mode: 如果没有提供文件，使用当前项目的示例文件
         let actualFiles = files;
         if (actualFiles.length === 0) {
           actualFiles = [
@@ -491,30 +490,35 @@ export const useCodeMapStore = create<CodeMapStore>()(
           ];
         }
 
-        console.log('🚀 Creating CodeMap with files:', actualFiles);
+        console.log('🚀 Creating CodeMap');
+        console.log('Query:', prompt);
+        console.log('Files:', actualFiles);
+        console.log('Project root:', projectRoot);
 
-        // 调用 Tauri 命令生成 CodeMap
         const codemapJson = await window.__TAURI__.core.invoke('generate_codemap_with_pi', {
           query: prompt,
           files: actualFiles,
           projectRoot: projectRoot,
         });
 
-        console.log('📦 Received raw JSON from generator:', codemapJson);
+        console.log('Received JSON length:', codemapJson.length);
 
-        const codemap: CodeMap = JSON.parse(codemapJson);
+        let codemap;
+        try {
+          codemap = JSON.parse(codemapJson);
+        } catch (parseError) {
+          console.error('Failed to parse JSON:', parseError);
+          console.error('Raw output:', codemapJson.substring(0, 500));
+          throw new Error(
+            'Failed to parse codemap data. The generator may have produced invalid output.'
+          );
+        }
 
         console.log('✅ Parsed CodeMap:', {
           codemapId: codemap.codemap_id,
           title: codemap.title,
-          nodesCount: codemap.nodes.length,
-          edgesCount: codemap.edges.length,
-          nodes: codemap.nodes.map((n) => ({
-            id: n.node_id,
-            title: n.title,
-            hasChildren: n.children?.length > 0,
-            codeRefsCount: n.code_refs?.length ?? 0,
-          })),
+          schemaVersion: codemap.schemaVersion,
+          tracesCount: codemap.traces?.length || 0,
         });
 
         set((state) => {
@@ -522,14 +526,13 @@ export const useCodeMapStore = create<CodeMapStore>()(
           state.isLoading = false;
         });
 
-        // 保存到历史
         const meta: CodeMapMeta = {
           id: codemap.codemap_id,
           filename: `${codemap.codemap_id}.json`,
           title: codemap.title,
           description: codemap.title,
-          query: codemap.prompt,
-          created_at: codemap.created_at,
+          query: codemap.prompt || prompt,
+          created_at: codemap.created_at || new Date().toISOString(),
           updated_at: new Date().toISOString(),
           tags: [modelTier],
           note: undefined,
@@ -539,6 +542,7 @@ export const useCodeMapStore = create<CodeMapStore>()(
           state.history.unshift(meta);
         });
       } catch (error) {
+        console.error('Failed to create codemap:', error);
         set((state) => {
           state.error = error instanceof Error ? error.message : String(error);
           state.isLoading = false;

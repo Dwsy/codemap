@@ -2,8 +2,8 @@
  * 文件工具
  */
 
-import { readFileSync, existsSync } from 'fs';
-import { join, relative, extname } from 'path';
+import { readFileSync, existsSync } from "fs";
+import { join, relative, extname } from "path";
 
 export interface FileContent {
   path: string;
@@ -13,7 +13,10 @@ export interface FileContent {
 /**
  * 读取文件内容
  */
-export function readFiles(filePaths: string[], projectRoot: string): FileContent[] {
+export function readFiles(
+  filePaths: string[],
+  projectRoot: string,
+): FileContent[] {
   const files: FileContent[] = [];
 
   for (const filePath of filePaths) {
@@ -24,11 +27,11 @@ export function readFiles(filePaths: string[], projectRoot: string): FileContent
       }
 
       const relativePath = relative(projectRoot, filePath);
-      const content = readFileSync(filePath, 'utf-8');
+      const content = readFileSync(filePath, "utf-8");
 
       files.push({
         path: relativePath,
-        content
+        content,
       });
     } catch (e) {
       console.error(`Failed to read file: ${filePath}`, e);
@@ -45,40 +48,40 @@ export function getFileLanguage(filePath: string): string {
   const ext = extname(filePath).toLowerCase();
 
   const langMap: Record<string, string> = {
-    '.js': 'javascript',
-    '.jsx': 'javascript',
-    '.ts': 'typescript',
-    '.tsx': 'typescript',
-    '.py': 'python',
-    '.rs': 'rust',
-    '.go': 'go',
-    '.java': 'java',
-    '.c': 'c',
-    '.cpp': 'cpp',
-    '.h': 'c',
-    '.hpp': 'cpp',
-    '.cs': 'csharp',
-    '.php': 'php',
-    '.rb': 'ruby',
-    '.swift': 'swift',
-    '.kt': 'kotlin',
-    '.dart': 'dart',
-    '.scala': 'scala',
-    '.sh': 'bash',
-    '.yaml': 'yaml',
-    '.yml': 'yaml',
-    '.json': 'json',
-    '.xml': 'xml',
-    '.html': 'html',
-    '.css': 'css',
-    '.scss': 'scss',
-    '.sass': 'sass',
-    '.less': 'less',
-    '.md': 'markdown',
-    '.sql': 'sql'
+    ".js": "javascript",
+    ".jsx": "javascript",
+    ".ts": "typescript",
+    ".tsx": "typescript",
+    ".py": "python",
+    ".rs": "rust",
+    ".go": "go",
+    ".java": "java",
+    ".c": "c",
+    ".cpp": "cpp",
+    ".h": "c",
+    ".hpp": "cpp",
+    ".cs": "csharp",
+    ".php": "php",
+    ".rb": "ruby",
+    ".swift": "swift",
+    ".kt": "kotlin",
+    ".dart": "dart",
+    ".scala": "scala",
+    ".sh": "bash",
+    ".yaml": "yaml",
+    ".yml": "yaml",
+    ".json": "json",
+    ".xml": "xml",
+    ".html": "html",
+    ".css": "css",
+    ".scss": "scss",
+    ".sass": "sass",
+    ".less": "less",
+    ".md": "markdown",
+    ".sql": "sql",
   };
 
-  return langMap[ext] || 'text';
+  return langMap[ext] || "text";
 }
 
 /**
@@ -95,31 +98,48 @@ ${file.content}
 /**
  * 构建生成提示
  */
-export function buildGeneratePrompt(query: string, files: FileContent[]): string {
-  const filesMarkdown = files.map(formatFileAsMarkdown).join('\n\n');
+export function buildGeneratePrompt(
+  query: string,
+  files: FileContent[],
+): string {
+  const filesMarkdown = files.map(formatFileAsMarkdown).join("\n\n");
 
-  return `Generate a CodeMap JSON for: "${query}"
+  return `根据以下代码，分析查询："${query}"
 
-Files to analyze:
+文件内容：
 ${filesMarkdown}
 
-Requirements:
-1. Extract all components, functions, classes
-2. Identify relationships between them
-3. Create code references with exact line numbers
-4. Write detailed trace guides
+要求：
+1. 识别关键组件、函数和类
+2. 分析它们之间的关系和调用流程
+3. 提取准确的代码行号
+4. 创建追踪指南
 
-Return ONLY valid JSON (no markdown, no explanations):
+只返回纯 JSON（无 markdown 代码块）：
 
 {
-  "schema_version": "0.1",
-  "codemap_id": "cm_<timestamp>",
-  "title": "CodeMap: <query>",
-  "prompt": "<query>",
-  "created_at": "<ISO8601>",
-  "repo": {"name": "<project>", "revision": "live", "snapshot_mode": "live"},
-  "generation": {"model_tier": "<fast|smart>", "zdr": true, "budgets": {"max_files": 50, "max_chunks": 200}},
-  "nodes": [{"node_id": "n_<i>", "title": "<Component Name>", "summary": "<Brief description>", "children": ["n_<child_id>", ...], "code_refs": [{"path": "<file>", "start_line": <num>, "end_line": <num>, "symbol": "<symbol>"}], "trace_guide": {"short": "<one line>", "long": "<detailed markdown>"}}],
-  "edges": [{"from": "n_<i>", "to": "n_<j>", "edge_type": "<calls|data_flow|depends>"}]
+  "schemaVersion": 1,
+  "title": "${query}",
+  "description": "简要描述",
+  "created_at": "${new Date().toISOString()}",
+  "traces": [
+    {
+      "id": "1",
+      "title": "步骤标题",
+      "description": "步骤描述",
+      "locations": [
+        {
+          "id": "1a",
+          "path": "文件路径",
+          "lineNumber": 1,
+          "lineContent": "代码内容",
+          "title": "节点标题",
+          "description": "节点描述"
+        }
+      ],
+      "traceTextDiagram": "树状调用图",
+      "traceGuide": "## Motivation\n动机\n\n## Details\n详细说明"
+    }
+  ]
 }`;
 }

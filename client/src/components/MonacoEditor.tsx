@@ -1,3 +1,4 @@
+import { forwardRef, useRef, useImperativeHandle } from 'react';
 import Editor from '@monaco-editor/react';
 
 export interface MonacoEditorRef {

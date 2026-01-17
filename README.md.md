@@ -3,11 +3,13 @@
 ## 🚀 快速启动
 
 ### 前置条件
+
 - Node.js 18+
 - Rust 1.70+
 - pnpm 10+
 
 ### 安装依赖
+
 ```bash
 cd ~/.pi/agent/skills/codemap/client
 pnpm install
@@ -16,12 +18,14 @@ pnpm install
 ## 🎮 一键启动
 
 ### 启动
+
 ```bash
 cd ~/.pi/agent/skills/codemap
 ./run.sh start
 ```
 
 启动后会显示：
+
 ```
 ╔══════════════════════════════════════════════════════════════╗
 ║              CodeMap 开发环境已启动                       ║
@@ -41,26 +45,31 @@ cd ~/.pi/agent/skills/codemap
 ```
 
 ### 停止
+
 ```bash
 ./run.sh stop
 ```
 
 ### 重启
+
 ```bash
 ./run.sh restart
 ```
 
 ### 查看状态
+
 ```bash
 ./run.sh status
 ```
 
 ### 查看日志
+
 ```bash
 ./run.sh logs
 ```
 
 ### 查看帮助
+
 ```bash
 ./run.sh help
 ```
@@ -86,6 +95,7 @@ cd ~/.pi/agent/skills/codemap
 ## 🔧 工作流
 
 ### 开发流程
+
 ```bash
 # 1. 启动开发环境
 cd ~/.pi/agent/skills/codemap
@@ -104,6 +114,7 @@ cd ~/.pi/agent/skills/codemap
 ```
 
 ### 调试流程
+
 ```bash
 # 查看进程状态
 ./run.sh status
@@ -121,6 +132,7 @@ tail -f ~/.codemap/logs/backend.log
 ## 🛠️ 故障排查
 
 ### 无法启动
+
 ```bash
 # 检查端口占用
 lsof -ti:1420
@@ -137,6 +149,7 @@ pnpm install
 ```
 
 ### 编译错误
+
 ```bash
 cd client/src-tauri
 cargo clean
@@ -144,6 +157,7 @@ cargo check
 ```
 
 ### 前端空白
+
 ```bash
 # 检查日志
 tail -20 ~/.codemap/logs/frontend.log
@@ -180,7 +194,9 @@ pnpm run tauri build
 # Windows: client/src-tauri/target/release/bundle/msi/CodeMap_0.1.0_x64_en-US.msi
 # Linux: client/src-tauri/target/release/bundle/appimage/
 ```
+
 ## 📚 相关文档
+
 - [中文文档](./README.zh.md) - 中文版文档
 - [README.md](./README.md) - 完整项目文档（英文）
 - [QUICKSTART.md](./QUICKSTART.md) - 快速开始指南

@@ -3,7 +3,7 @@ import { getFileIcon } from 'file-icons-js';
 /**
  * 根据文件名获取文件图标 SVG
  */
-export function getFileIconSVG(fileName: string, isOpen: boolean = false): string {
+export function getFileIconSVG(fileName: string, _isOpen: boolean = false): string {
   const icon = getFileIcon(fileName);
   return icon;
 }

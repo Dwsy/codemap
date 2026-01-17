@@ -14,7 +14,7 @@ export default defineConfig(async () => ({
       '@utils': path.resolve(__dirname, './src/utils'),
       '@types': path.resolve(__dirname, './src/types'),
       '@stores': path.resolve(__dirname, './src/stores'),
-      'codemap': path.resolve(__dirname, './src/types/codemap'),
+      codemap: path.resolve(__dirname, './src/types/codemap'),
     },
   },
 
@@ -35,15 +35,7 @@ export default defineConfig(async () => ({
 
   // Dependencies pre-bundling
   optimizeDeps: {
-    include: [
-      'react',
-      'react-dom',
-      'reactflow',
-      'd3',
-      'mermaid',
-      'marked',
-      'zustand',
-    ],
+    include: ['react', 'react-dom', 'reactflow', 'd3', 'mermaid', 'marked', 'zustand'],
     exclude: ['@tauri-apps/api'],
   },
 
@@ -57,8 +49,12 @@ export default defineConfig(async () => ({
         manualChunks: {
           'monaco-editor': ['monaco-editor', '@monaco-editor/react'],
           'reactflow-core': ['reactflow', 'd3'],
-          'markdown': ['mermaid', 'marked', 'react-markdown'],
-          'ui-components': ['@radix-ui/react-dialog', '@radix-ui/react-select', '@radix-ui/react-tabs'],
+          markdown: ['mermaid', 'marked', 'react-markdown'],
+          'ui-components': [
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-select',
+            '@radix-ui/react-tabs',
+          ],
         },
         onwarn(warning, warn) {
           if (warning.code === 'MODULE_NOT_FOUND' && warning.message.includes('monaco-editor')) {

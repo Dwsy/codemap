@@ -2,17 +2,23 @@
  * CodeMap Generator 主入口
  */
 
-import { ProviderFactory } from './providers/index.js';
-import { readFiles, buildGeneratePrompt } from './utils/fileUtils.js';
-import type { GenerateOptions, AnalyzeOptions } from './types.js';
+import { ProviderFactory } from "./providers/index.js";
+import { readFiles, buildGeneratePrompt } from "./utils/fileUtils.js";
+import type { GenerateOptions, AnalyzeOptions } from "./types.js";
 
 /**
  * 生成 CodeMap
  */
 export async function generateCodemap(options: GenerateOptions) {
-  const { query, files, projectRoot, modelTier = 'fast', provider = 'pi' } = options;
+  const {
+    query,
+    files,
+    projectRoot,
+    modelTier = "fast",
+    provider = "pi",
+  } = options;
 
-  console.error('Generating CodeMap...');
+  console.error("Generating CodeMap...");
   console.error(`Query: ${query}`);
   console.error(`Files: ${files.length}`);
   console.error(`Project Root: ${projectRoot}`);
@@ -23,7 +29,7 @@ export async function generateCodemap(options: GenerateOptions) {
   const fileContents = readFiles(files, projectRoot);
 
   if (fileContents.length === 0) {
-    throw new Error('No valid files to analyze');
+    throw new Error("No valid files to analyze");
   }
 
   // 构建提示
@@ -33,7 +39,9 @@ export async function generateCodemap(options: GenerateOptions) {
   const aiProvider = ProviderFactory.create(provider);
   const codemap = await aiProvider.generate(prompt, modelTier);
 
-  console.error(`Successfully generated codemap with ${codemap.nodes.length} nodes`);
+  console.error(
+    `Successfully generated codemap with ${codemap.nodes.length} nodes`,
+  );
 
   return codemap;
 }
@@ -42,15 +50,15 @@ export async function generateCodemap(options: GenerateOptions) {
  * 分析代码
  */
 export async function analyzeCode(options: AnalyzeOptions) {
-  const { filePath, provider = 'pi' } = options;
+  const { filePath, provider = "pi" } = options;
 
-  console.error('Analyzing code...');
+  console.error("Analyzing code...");
   console.error(`File: ${filePath}`);
 
-  const { readFileSync, extname } = await import('fs');
-  const { getFileLanguage } = await import('./utils/fileUtils.js');
+  const { readFileSync, extname } = await import("fs");
+  const { getFileLanguage } = await import("./utils/fileUtils.js");
 
-  const content = readFileSync(filePath, 'utf-8');
+  const content = readFileSync(filePath, "utf-8");
   const lang = getFileLanguage(filePath);
 
   const prompt = `Analyze this code and return JSON with functions, classes, imports, and complexity metrics:
@@ -74,14 +82,16 @@ export async function main() {
   const args = process.argv.slice(2);
 
   if (args.length < 2) {
-    console.error('Usage: bun run src/index.ts <action> [options]');
-    console.error('Actions: generate, analyze');
-    console.error('');
-    console.error('Generate action:');
-    console.error('  bun run src/index.ts generate "<query>" <files_json> <project_root> [model_tier] [provider]');
-    console.error('');
-    console.error('Analyze action:');
-    console.error('  bun run src/index.ts analyze <file_path> [provider]');
+    console.error("Usage: bun run src/index.ts <action> [options]");
+    console.error("Actions: generate, analyze");
+    console.error("");
+    console.error("Generate action:");
+    console.error(
+      '  bun run src/index.ts generate "<query>" <files_json> <project_root> [model_tier] [provider]',
+    );
+    console.error("");
+    console.error("Analyze action:");
+    console.error("  bun run src/index.ts analyze <file_path> [provider]");
     process.exit(1);
   }
 
@@ -89,11 +99,19 @@ export async function main() {
 
   try {
     switch (action) {
-      case 'generate': {
-        const [query, filesStr, projectRoot, modelTier = 'fast', provider = 'pi'] = args.slice(1);
+      case "generate": {
+        const [
+          query,
+          filesStr,
+          projectRoot,
+          modelTier = "fast",
+          provider = "pi",
+        ] = args.slice(1);
 
         if (!query || !filesStr || !projectRoot) {
-          throw new Error('Missing required arguments: query, files_json, project_root');
+          throw new Error(
+            "Missing required arguments: query, files_json, project_root",
+          );
         }
 
         const files = JSON.parse(filesStr);
@@ -101,8 +119,8 @@ export async function main() {
           query,
           files,
           projectRoot,
-          modelTier: modelTier as 'fast' | 'smart',
-          provider: provider as 'pi' | 'claude'
+          modelTier: modelTier as "fast" | "smart",
+          provider: provider as "pi" | "claude",
         });
 
         // 输出 JSON
@@ -110,16 +128,16 @@ export async function main() {
         break;
       }
 
-      case 'analyze': {
-        const [filePath, provider = 'pi'] = args.slice(1);
+      case "analyze": {
+        const [filePath, provider = "pi"] = args.slice(1);
 
         if (!filePath) {
-          throw new Error('Missing file path');
+          throw new Error("Missing file path");
         }
 
         const analysis = await analyzeCode({
           filePath,
-          provider: provider as 'pi' | 'claude'
+          provider: provider as "pi" | "claude",
         });
 
         console.log(JSON.stringify(analysis, null, 2));
@@ -131,7 +149,10 @@ export async function main() {
         process.exit(1);
     }
   } catch (error) {
-    console.error('Error:', error instanceof Error ? error.message : String(error));
+    console.error(
+      "Error:",
+      error instanceof Error ? error.message : String(error),
+    );
     process.exit(1);
   }
 }

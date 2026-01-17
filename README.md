@@ -34,20 +34,25 @@ CodeMap 的哲学基于一个核心洞察：**追踪即理解**。
 ## 核心概念
 
 ### Node (节点)
+
 代表一个逻辑单元——可能是一个 API 入口、一个服务方法、一段关键业务逻辑。每个节点包含：
+
 - **title**: 节点名称
 - **summary**: 简短描述
 - **code_refs**: 精确的代码引用（文件路径 + 行号）
 - **trace_guide**: 追踪指南（动机 + 细节）
 
 ### Edge (边)
+
 表达节点间的关系：
+
 - `calls`: 调用关系
 - `depends`: 依赖关系
 - `data_flow`: 数据流向
 - `inherits`: 继承关系
 
 ### Trace (追踪链路)
+
 将复杂流程拆解为 3-5 个逻辑阶段，每个阶段是一个独立的理解单元。
 
 ---
@@ -73,18 +78,19 @@ codemap/
 
 ### 技术选型
 
-| 层 | 技术 | 理由 |
-|---|---|---|
-| 后端 | Rust + Tauri | 性能、安全、跨平台 |
+| 层   | 技术               | 理由               |
+| ---- | ------------------ | ------------------ |
+| 后端 | Rust + Tauri       | 性能、安全、跨平台 |
 | 前端 | React + TypeScript | 类型安全、生态成熟 |
-| 状态 | Zustand + Immer | 简洁、不可变更新 |
-| AI | Pi CLI (Gemini) | 灵活的模型切换 |
+| 状态 | Zustand + Immer    | 简洁、不可变更新   |
+| AI   | Pi CLI (Gemini)    | 灵活的模型切换     |
 
 ---
 
 ## 快速开始
 
 ### 前置条件
+
 - Node.js 18+
 - Rust 1.70+
 - pnpm
@@ -117,12 +123,12 @@ interface CodeMap {
   schema_version: string;
   codemap_id: string;
   title: string;
-  prompt: string;           // 用户原始查询
+  prompt: string; // 用户原始查询
   created_at: DateTime;
   repo: RepoInfo;
   generation: {
-    model_tier: 'fast' | 'smart';
-    zdr: boolean;           // Zero Data Retention
+    model_tier: "fast" | "smart";
+    zdr: boolean; // Zero Data Retention
     budgets: {
       max_files: number;
       max_chunks: number;

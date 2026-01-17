@@ -110,10 +110,12 @@ const provider = ProviderFactory.create('pi');
 
 ```typescript
 class ProviderFactory {
-  static create(provider: 'pi' | 'claude'): AIProvider {
+  static create(provider: "pi" | "claude"): AIProvider {
     switch (provider) {
-      case 'pi': return new PiProvider();
-      case 'claude': return new ClaudeProvider();
+      case "pi":
+        return new PiProvider();
+      case "claude":
+        return new ClaudeProvider();
     }
   }
 }
@@ -133,7 +135,7 @@ class ProviderFactory {
 ```typescript
 // src/providers/OpenAIProvider.ts
 export class OpenAIProvider extends BaseProvider {
-  name = 'openai';
+  name = "openai";
 
   async generate(prompt: string, modelTier: string): Promise<CodeMap> {
     // 实现生成逻辑
@@ -152,9 +154,12 @@ export class OpenAIProvider extends BaseProvider {
 export class ProviderFactory {
   static create(provider: string): AIProvider {
     switch (provider) {
-      case 'pi': return new PiProvider();
-      case 'claude': return new ClaudeProvider();
-      case 'openai': return new OpenAIProvider();  // 新增
+      case "pi":
+        return new PiProvider();
+      case "claude":
+        return new ClaudeProvider();
+      case "openai":
+        return new OpenAIProvider(); // 新增
     }
   }
 }

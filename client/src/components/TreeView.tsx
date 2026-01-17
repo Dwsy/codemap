@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ChevronRight, ChevronDown, File, Folder, FolderOpen } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronRight, ChevronDown, Folder, FolderOpen } from 'lucide-react';
 import { cn } from './ui/index';
 import { Node as CodeMapNode } from 'codemap';
 
@@ -35,7 +35,7 @@ export function TreeView({ nodes = [], onNodeClick, selectedNodeId }: TreeViewPr
   const [expandedNodes, setExpandedNodes] = useState<Set<string>>(new Set());
 
   // 检查是否是 CodeMapNode
-  const isCodeMapNodes = nodes.length > 0 && 'node_id' in nodes[0];
+  const isCodeMapNodes = nodes.length > 0 && 'node_id' in (nodes[0] || {});
 
   // 转换为 TreeNode
   const treeNodes: TreeNode[] = isCodeMapNodes

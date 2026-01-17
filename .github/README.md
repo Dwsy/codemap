@@ -7,10 +7,12 @@
 ### 1. CI (Continuous Integration)
 
 **触发条件：**
+
 - 推送到 `main` 或 `develop` 分支
 - 针对 `main` 或 `develop` 的 Pull Request
 
 **功能：**
+
 - 运行测试套件
 - 检查 Rust 代码格式 (`cargo fmt --check`)
 - 运行 Clippy 静态分析
@@ -21,10 +23,12 @@
 ### 2. Build Release (发布构建)
 
 **触发条件：**
+
 - 推送标签（如 `v0.1.0`）
 - 手动触发（workflow_dispatch）
 
 **功能：**
+
 - 构建多平台发布版本：
   - macOS ARM64 (Apple Silicon)
   - macOS x86_64 (Intel)
@@ -38,9 +42,11 @@
 ### 3. Quick Build (快速构建)
 
 **触发条件：**
+
 - 手动触发（workflow_dispatch）
 
 **功能：**
+
 - 快速构建单个或所有平台
 - 适用于测试和预览
 - 构建产物保留 7 天
@@ -83,15 +89,18 @@ gh run download <run-id>
 ## 构建产物
 
 ### macOS
+
 - **DMG**: `CodeMap_<version>_x64.dmg` / `CodeMap_<version>_aarch64.dmg`
 - 位置：`client/src-tauri/target/<target>/bundle/dmg/`
 
 ### Linux
+
 - **DEB**: `codemap_<version>_amd64.deb`
 - **AppImage**: `codemap_<version>_amd64.AppImage`
 - 位置：`client/src-tauri/target/release/bundle/`
 
 ### Windows
+
 - **MSI**: `CodeMap_<version>_x64_en-US.msi`
 - **NSIS**: `CodeMap_<version>_x64-setup.exe`
 - 位置：`client/src-tauri/target/release/bundle/`
@@ -142,6 +151,7 @@ pnpm run tauri build --target x86_64-apple-darwin
 ### Linux 构建问题
 
 确保已安装以下依赖：
+
 ```bash
 sudo apt-get install -y \
   libgtk-3-dev \
@@ -154,6 +164,7 @@ sudo apt-get install -y \
 ### macOS 签名问题
 
 如需代码签名，请在 `tauri.conf.json` 中配置：
+
 ```json
 {
   "bundle": {

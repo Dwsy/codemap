@@ -158,7 +158,7 @@ const GraphView: React.FC = () => {
   );
 
   const onNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
+    (_event: React.MouseEvent, node: Node) => {
       setSelectedNodeId(node.id);
     },
     [setSelectedNodeId]

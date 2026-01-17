@@ -9,20 +9,22 @@ description: 代码流程分析与可视化工具，将复杂代码执行流转�
 
 ## 执行环境
 
-| 路径类型 | 路径 | 基准目录 |
-|---------|------|---------|
-| **技能目录** | `~/.pi/agent/skills/codemap/` | 固定位置 |
+| 路径类型       | 路径                                  | 基准目录 |
+| -------------- | ------------------------------------- | -------- |
+| **技能目录**   | `~/.pi/agent/skills/codemap/`         | 固定位置 |
 | **SKILL 文件** | `~/.pi/agent/skills/codemap/SKILL.md` | 技能目录 |
-| **客户端目录** | `~/.pi/agent/skills/codemap/client/` | 技能目录 |
+| **客户端目录** | `~/.pi/agent/skills/codemap/client/`  | 技能目录 |
 
 ## 功能特性
 
 ### 核心功能
+
 - **代码流程分析**：自动识别 Controller、Service、Mapper 等关键代码节点
 - **可视化输出**：生成三种可视化形式（文本调用图、Mermaid 流程图、Markdown 指南）
 - **本地处理**：所有代码分析在本地完成，保护隐私
 
 ### 高级功能
+
 - **历史版本管理**：保存和管理多个 CodeMap 版本，支持版本对比
 - **目录树浏览**：交互式文件目录树，支持多文件/文件夹选择
 - **导入导出**：支持 JSON、Markdown、自包含 HTML 格式
@@ -31,12 +33,14 @@ description: 代码流程分析与可视化工具，将复杂代码执行流转�
 ## 客户端架构
 
 ### 技术栈
+
 - **后端**：Rust + Tauri
 - **前端**：Web（HTML + CSS + JavaScript）
 - **存储**：基于文件系统（JSON 格式，存储在 `docs/.codemap/` 目录）
 - **可视化库**：mermaid.js、marked.js
 
 ### 目录结构
+
 ```
 ~/.pi/agent/skills/codemap/
 ├── SKILL.md                    # 技能文档
@@ -118,6 +122,7 @@ AI（调用 codemap）：
 ## Tauri 命令 API
 
 ### `analyze_code`
+
 分析代码并生成 CodeMap。
 
 ```rust
@@ -130,6 +135,7 @@ async fn analyze_code(
 ```
 
 ### `save_codemap`
+
 保存 CodeMap 到数据库。
 
 ```rust
@@ -142,6 +148,7 @@ async fn save_codemap(
 ```
 
 ### `list_codemaps`
+
 列出所有保存的 CodeMap。
 
 ```rust
@@ -150,6 +157,7 @@ async fn list_codemaps() -> Result<Vec<CodeMapMeta>, String>
 ```
 
 ### `load_codemap`
+
 加载指定 ID 的 CodeMap。
 
 ```rust
@@ -158,6 +166,7 @@ async fn load_codemap(id: u64) -> Result<CodeMap, String>
 ```
 
 ### `delete_codemap`
+
 删除指定 ID 的 CodeMap。
 
 ```rust
@@ -166,6 +175,7 @@ async fn delete_codemap(id: u64) -> Result<(), String>
 ```
 
 ### `export_codemap`
+
 导出 CodeMap 为指定格式。
 
 ```rust
@@ -178,6 +188,7 @@ async fn export_codemap(
 ```
 
 ### `import_codemap`
+
 导入 CodeMap 从文件。
 
 ```rust
@@ -190,6 +201,7 @@ async fn import_codemap(
 ## 前端界面设计
 
 ### 主界面布局
+
 ```
 ┌─────────────────────────────────────────────────────┐
 │  CodeMap - 代码流程可视化工具           [设置] [帮助] │
@@ -218,28 +230,33 @@ async fn import_codemap(
 ### 组件说明
 
 #### 1. 目录树组件（DirectoryTree）
+
 - 显示项目目录结构
 - 支持多文件选择（复选框）
 - 支持文件夹全选
 - 显示文件类型图标
 
 #### 2. 查询输入组件（QueryInput）
+
 - 文本输入框
 - 支持历史查询记录
 - 提供示例查询提示
 
 #### 3. 可视化展示区（VisualizationPanel）
+
 - 三个 Tab：Mermaid 图、文本调用图、Markdown 指南
 - 支持缩放和全屏
 - 支持节点点击查看代码
 
 #### 4. 历史版本列表（HistorySidebar）
+
 - 显示所有保存的 CodeMap
 - 支持搜索和过滤
 - 显示创建时间和标签
 - 支持删除和重命名
 
 #### 5. 导出组件（ExportDialog）
+
 - 格式选择：JSON、Markdown、HTML
 - 文件路径选择
 - 导出进度显示
@@ -321,18 +338,22 @@ CodeMap 使用基于文件系统的存储方式，所有数据存储在项目的
 ### 关键节点识别
 
 #### Controller 层
+
 - 特征：类名包含 `Controller`、`Api`、`Endpoint`
 - 关键方法：`@RequestMapping`、`@GetMapping`、`@PostMapping` 等
 
 #### Service 层
+
 - 特征：类名包含 `Service`、`Manager`、`Handler`
 - 关键逻辑：业务判断、数据处理
 
 #### Mapper/DAO 层
+
 - 特征：类名包含 `Mapper`、`Dao`、`Repository`
 - 关键操作：数据库查询、插入、更新
 
 #### 分支判断
+
 - 特征：`if`、`switch`、`try-catch`、三元运算符
 - 记录条件表达式
 
@@ -357,10 +378,12 @@ CodeMap 使用基于文件系统的存储方式，所有数据存储在项目的
 ### 示例 1：分析登录流程
 
 **输入**：
+
 - 查询：`用户登录全流程`
 - 文件：`src/controller/LoginController.java`, `src/service/UserService.java`, `src/mapper/UserMapper.java`
 
 **输出**：
+
 ```json
 {
   "schemaVersion": 1,
@@ -389,21 +412,25 @@ CodeMap 使用基于文件系统的存储方式，所有数据存储在项目的
 ## 最佳实践
 
 ### 代码选择
+
 - 选择完整的业务流程相关文件
 - 包含 Controller、Service、Mapper 层
 - 避免选择过多无关文件
 
 ### 查询编写
+
 - 使用清晰的业务术语：`用户登录流程`、`订单创建流程`
 - 可以包含特定关注点：`支付流程 - 异常处理`
 - 中英文均可，系统会自动识别
 
 ### 版本管理
+
 - 为重要的 CodeMap 添加标签：`v1.0`、`生产环境`
 - 添加备注说明版本变更点
 - 定期清理过期的历史版本
 
 ### 导出格式
+
 - **JSON**：用于程序化处理和二次开发
 - **Markdown**：用于文档归档和版本控制
 - **HTML**：用于分享和演示

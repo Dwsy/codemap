@@ -1,11 +1,22 @@
-import React from 'react';
-import { useCodeMapStore } from '@stores/codemapStore';
-import { Icon, LoadingSpinner, StatusIcon } from '@components/icons';
-import { TreeView } from '@components/TreeView';
-import GraphView from '@components/GraphView';
-import NodeDetails from '@components/NodeDetails';
-import { Button } from '@components/ui/Button';
-import { Input } from '@components/ui/Input';
+import React, { useState } from 'react';
+import { useCodeMapStore } from '../stores/codemapStore';
+import { Icon } from './icons';
+import { TreeView } from './TreeView';
+import GraphView from './GraphView';
+import NodeDetails from './NodeDetails';
+import { Button } from './ui/Button';
+// import { Input } from './ui/Input';
+import { Alert } from './ui/Alert';
+import { EmptyState } from './ui/EmptyState';
+import { LoadingSpinner } from './icons';
+import { ProgressBar } from './ui/Loading';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from './ui/Dialog';
 import {
   Select,
   SelectContent,
@@ -13,19 +24,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@components/ui/Select';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@components/ui/Dialog';
 import { ModelTier } from 'codemap';
+import { cn } from '@components/ui';
 
-/**
- * MainPanel 组件
- * 包含树/图视图和节点详情面板
- */
 const MainPanel: React.FC = () => {
   const {
     currentCodeMap,
@@ -35,7 +36,6 @@ const MainPanel: React.FC = () => {
     selectedNodeId,
     setSelectedNodeId,
     panelLayout,
-    setPanelLayout,
     createCodeMap,
     showCreateDialog,
     setShowCreateDialog,
@@ -43,11 +43,10 @@ const MainPanel: React.FC = () => {
     setInitialPrompt,
   } = useCodeMapStore();
 
-  const [prompt, setPrompt] = React.useState('');
-  const [modelTier, setModelTier] = React.useState<ModelTier>(ModelTier.Fast);
-  const [selectedFiles, setSelectedFiles] = React.useState<string[]>([]);
+  const [prompt, setPrompt] = useState('');
+  const [modelTier, setModelTier] = useState<ModelTier>(ModelTier.Fast);
+  const [progress, setProgress] = useState(0);
 
-  // 对话框关闭时清除 initialPrompt
   React.useEffect(() => {
     if (!showCreateDialog && initialPrompt) {
       setInitialPrompt('');
@@ -55,66 +54,100 @@ const MainPanel: React.FC = () => {
     }
   }, [showCreateDialog, initialPrompt, setInitialPrompt]);
 
-  // 同步 Store 中的 initialPrompt 到本地状态
   React.useEffect(() => {
     if (initialPrompt && showCreateDialog) {
       setPrompt(initialPrompt);
     }
   }, [initialPrompt, showCreateDialog]);
 
-  // 模拟项目根目录
-  const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
+  const handleNodeClick = (node: any) => {
+    setSelectedNodeId('node_id' in node ? node.node_id : node.id);
+  };
+
+  const handleCreate = async () => {
+    if (!prompt.trim()) return;
+
+    const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
+
+    try {
+      for (let i = 0; i <= 100; i += 10) {
+        setProgress(i);
+        await new Promise((res) => setTimeout(res, 200));
+      }
+
+      await createCodeMap(prompt, [], projectRoot, modelTier);
+      setShowCreateDialog(false);
+      setProgress(0);
+    } catch (err) {
+      console.error('Failed to create codemap:', err);
+      setProgress(0);
+    }
+  };
 
   return (
     <>
-      {/* Content */}
       {!currentCodeMap && !isLoading && !error && (
-        <div className="flex-1 flex items-center justify-center bg-muted/30">
-          <EmptyState onOpenCreate={() => setShowCreateDialog(true)} />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <EmptyState
+            icon="Map"
+            title="No CodeMap Generated"
+            description="Generate a visual map to understand your code execution flow"
+            actionLabel="Create CodeMap"
+            onAction={() => setShowCreateDialog(true)}
+          />
         </div>
       )}
 
       {isLoading && (
-        <div className="flex-1 flex items-center justify-center bg-muted/30">
-          <LoadingState />
+        <div className="flex-1 flex flex-col items-center justify-center p-8">
+          <LoadingSpinner size={48} className="mx-auto mb-4 text-primary animate-spin" />
+          <h2 className="text-xl font-semibold mb-2">Generating CodeMap</h2>
+          <p className="text-sm text-muted-foreground">
+            {viewMode === 'tree' ? 'Building tree structure...' : 'Creating network graph...'}
+          </p>
+          <ProgressBar value={progress} showLabel size="lg" className="max-w-md" />
         </div>
       )}
 
       {error && (
-        <div className="flex-1 flex items-center justify-center bg-muted/30">
-          <ErrorState error={error} />
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="max-w-lg w-full">
+            <Alert variant="destructive" title="Generation Failed">
+              <p className="mb-4">{error}</p>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowCreateDialog(true)}>
+                  <Icon.Plus size={16} className="mr-2" />
+                  Try Again
+                </Button>
+              </div>
+            </Alert>
+          </div>
         </div>
       )}
 
       {currentCodeMap && (
         <div className="flex-1 flex overflow-hidden">
-          {/* Tree/Graph View */}
           <div
-            className="flex-1 overflow-hidden"
-            style={{
-              width: panelLayout.showDetails
-                ? `calc(100% - ${panelLayout.detailsWidth}px)`
-                : '100%',
-            }}
+            className={cn(
+              'flex-1 overflow-auto',
+              panelLayout.showDetails && 'border-r border-border'
+            )}
           >
             {viewMode === 'tree' ? (
               <TreeView
                 nodes={currentCodeMap?.nodes || []}
                 selectedNodeId={selectedNodeId || undefined}
-                onNodeClick={(node) =>
-                  setSelectedNodeId('node_id' in node ? node.node_id : node.id)
-                }
+                onNodeClick={handleNodeClick}
               />
             ) : (
               <GraphView />
             )}
           </div>
 
-          {/* Node Details Panel */}
           {panelLayout.showDetails && selectedNodeId && (
             <div
-              className="border-l border-border bg-card"
               style={{ width: panelLayout.detailsWidth }}
+              className="border-l border-border bg-card flex flex-col"
             >
               <NodeDetails />
             </div>
@@ -122,7 +155,6 @@ const MainPanel: React.FC = () => {
         </div>
       )}
 
-      {/* Create CodeMap Dialog - 始终渲染 */}
       <CreateCodeMapDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}
@@ -130,84 +162,12 @@ const MainPanel: React.FC = () => {
         onPromptChange={setPrompt}
         modelTier={modelTier}
         onModelTierChange={setModelTier}
+        onCreate={handleCreate}
       />
     </>
   );
 };
 
-/**
- * Empty State
- */
-interface EmptyStateProps {
-  onOpenCreate: () => void;
-}
-
-const EmptyState: React.FC<EmptyStateProps> = ({ onOpenCreate }) => {
-  return (
-    <div className="text-center max-w-md">
-      <div className="mb-6">
-        <Icon.Map size={64} className="mx-auto text-muted-foreground/50" />
-      </div>
-      <h2 className="text-2xl font-semibold mb-2">Create Your First CodeMap</h2>
-      <p className="text-muted-foreground mb-6">
-        Generate a visual map of your code execution flow to understand how components work
-        together.
-      </p>
-      <div className="flex flex-col gap-3">
-        <Button size="lg" onClick={onOpenCreate}>
-          <Icon.Plus size={18} className="mr-2" />
-          Create CodeMap
-        </Button>
-        <Button
-          variant="outline"
-          size="lg"
-          onClick={() => window.open('https://github.com', '_blank')}
-        >
-          <Icon.BookOpen size={18} className="mr-2" />
-          View Documentation
-        </Button>
-      </div>
-    </div>
-  );
-};
-
-/**
- * Loading State
- */
-const LoadingState: React.FC = () => {
-  return (
-    <div className="text-center">
-      <LoadingSpinner size={48} className="mx-auto mb-4 text-primary" />
-      <h2 className="text-xl font-semibold mb-2">Generating CodeMap</h2>
-      <p className="text-muted-foreground">Analyzing code and building the map...</p>
-    </div>
-  );
-};
-
-/**
- * Error State
- */
-interface ErrorStateProps {
-  error: string;
-}
-
-const ErrorState: React.FC<ErrorStateProps> = ({ error }) => {
-  return (
-    <div className="text-center max-w-md">
-      <StatusIcon status="error" size={48} className="mx-auto mb-4" />
-      <h2 className="text-xl font-semibold mb-2">Something went wrong</h2>
-      <p className="text-muted-foreground mb-4">{error}</p>
-      <Button variant="outline" onClick={() => window.location.reload()}>
-        <Icon.RefreshCw size={16} className="mr-2" />
-        Try Again
-      </Button>
-    </div>
-  );
-};
-
-/**
- * Create CodeMap Dialog
- */
 interface CreateCodeMapDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -215,6 +175,7 @@ interface CreateCodeMapDialogProps {
   onPromptChange: (prompt: string) => void;
   modelTier: ModelTier;
   onModelTierChange: (tier: ModelTier) => void;
+  onCreate: () => void;
 }
 
 const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
@@ -224,78 +185,35 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
   onPromptChange,
   modelTier,
   onModelTierChange,
+  onCreate,
 }) => {
-  const { createCodeMap } = useCodeMapStore();
-  const [isLoading, setIsLoading] = React.useState(false);
-  const [selectedFiles, setSelectedFiles] = React.useState<string[]>([]);
-  const projectRoot = '/Users/dengwenyu/.pi/agent/skills/codemap';
-
-  const handleCreate = async () => {
-    if (!prompt.trim()) return;
-
-    setIsLoading(true);
-    try {
-      await createCodeMap(prompt, selectedFiles, projectRoot, modelTier);
-      onOpenChange(false);
-      // 不要清空 prompt，让父组件处理
-      setSelectedFiles([]);
-    } catch (error) {
-      console.error('Failed to create codemap:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Create New CodeMap</DialogTitle>
+          <DialogDescription>
+            Describe the code flow or component you want to visualize
+          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          {/* Prompt Input */}
+        <div className="space-y-6 py-4">
           <div className="space-y-2">
-            <label className="text-sm font-medium">What do you want to understand?</label>
-            <Input
+            <label htmlFor="prompt" className="text-sm font-medium">
+              What do you want to understand?
+            </label>
+            <textarea
+              id="prompt"
               placeholder="e.g., 'Trace the user authentication flow from login to token issuance'"
               value={prompt}
               onChange={(e) => onPromptChange(e.target.value)}
-              className="h-24"
+              className="flex min-h-24 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-none"
             />
             <p className="text-xs text-muted-foreground">
-              Describe the code flow or component you want to explore
+              Be specific about the flow or component you want to explore
             </p>
           </div>
 
-          {/* Files Selection (Demo) */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Select Files (Demo Mode)</label>
-            <div className="p-3 bg-muted rounded-lg text-sm">
-              <p className="text-muted-foreground mb-2">
-                In demo mode, using sample files from the project:
-              </p>
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked disabled />
-                  <span>src/App.tsx</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked disabled />
-                  <span>src/stores/codemapStore.ts</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" checked disabled />
-                  <span>src/components/Header.tsx</span>
-                </div>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Full file selection will be implemented in future versions
-            </p>
-          </div>
-
-          {/* Model Tier Selection */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Analysis Mode</label>
             <Select
@@ -307,24 +225,28 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value={ModelTier.Fast}>
-                  <div className="flex items-center gap-2">
-                    <Icon.Zap size={16} />
-                    <div className="flex flex-col">
-                      <span className="font-medium">Fast</span>
-                      <span className="text-xs text-gray-500">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Icon.Zap size={18} />
+                    </div>
+                    <div>
+                      <div className="font-medium">Fast</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         Quick analysis (~20s), moderate detail
-                      </span>
+                      </div>
                     </div>
                   </div>
                 </SelectItem>
                 <SelectItem value={ModelTier.Smart}>
-                  <div className="flex items-center gap-2">
-                    <Icon.Brain size={16} />
-                    <div className="flex flex-col">
-                      <span className="font-medium">Smart</span>
-                      <span className="text-xs text-gray-500">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 mt-0.5">
+                      <Icon.Brain size={18} />
+                    </div>
+                    <div>
+                      <div className="font-medium">Smart</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
                         Deep analysis (~60s), comprehensive detail
-                      </span>
+                      </div>
                     </div>
                   </div>
                 </SelectItem>
@@ -333,22 +255,13 @@ const CreateCodeMapDialog: React.FC<CreateCodeMapDialogProps> = ({
           </div>
         </div>
 
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+        <div className="flex justify-end gap-3">
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={false}>
             Cancel
           </Button>
-          <Button onClick={handleCreate} disabled={!prompt.trim() || isLoading}>
-            {isLoading ? (
-              <>
-                <LoadingSpinner size={16} className="mr-2" />
-                Generating...
-              </>
-            ) : (
-              <>
-                <Icon.Plus size={16} className="mr-2" />
-                Generate CodeMap
-              </>
-            )}
+          <Button onClick={onCreate} disabled={!prompt.trim()}>
+            <Icon.Plus size={16} className="mr-2" />
+            Generate CodeMap
           </Button>
         </div>
       </DialogContent>

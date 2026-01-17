@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   Map,
   Plus,
@@ -44,6 +44,10 @@ import {
   Send,
   Edit,
   Globe,
+  Info,
+  AlertTriangle,
+  User,
+  Check,
 } from 'lucide-react';
 
 /**
@@ -104,6 +108,10 @@ export const Icon = {
   CheckCircle,
   AlertCircle,
   Loader2,
+  Info,
+  Check,
+  AlertTriangle,
+  User,
 
   // 更多图标
   MoreVertical,

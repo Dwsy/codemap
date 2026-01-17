@@ -1,23 +1,29 @@
 # Data Model Migration to CodeMap v2
 
 ## Status
+
 Accepted
 
 ## Context
+
 当前CodeMap项目存在两个版本的数据模型定义：
+
 - `codemap.rs`: 旧版数据结构（Traces架构）
 - `codemap_v2.rs`: 新版数据结构（Nodes + Edges架构）
 
 并存导致：
+
 1. 代码混淆：analyzer、storage、commands使用旧版
 2. 类型不一致：前端TypeScript使用新版
 3. 维护困难：新旧结构需要同步更新
 4. 测试障碍：无法统一测试策略
 
 ## Decision
+
 **统一使用 `codemap_v2.rs` 作为唯一数据模型**
 
 ### 迁移步骤
+
 1. 更新 `storage.rs` - 适配v2的索引结构
 2. 更新 `analyzer.rs` - 生成v2的CodeMap
 3. 更新 `commands.rs` - 使用v2类型
@@ -28,17 +34,20 @@ Accepted
 ## Consequences
 
 ### 优点
+
 - 统一数据模型，消除混淆
 - 使用Windsurf Codemaps标准，提高兼容性
 - 简化维护和测试
 - 前后端类型自动同步（通过ts-rs可自动生成）
 
 ### 缺点
+
 - 需要迁移现有数据（index.json）
 - 分析器需要重写以生成Nodes/Edges
 - 需要更新所有相关导入
 
 ### 迁移影响范围
+
 - Rust后端：storage, analyzer, commands
 - 前端：无需改动（已使用v2类型）
 - 数据格式：需要迁移存储的codemaps
@@ -46,6 +55,7 @@ Accepted
 ## Migration Notes
 
 ### 旧结构 (codemap.rs)
+
 ```rust
 pub struct CodeMap {
     pub schema_version: u32,
@@ -65,6 +75,7 @@ pub struct Trace {
 ```
 
 ### 新结构 (codemap_v2.rs)
+
 ```rust
 pub struct CodeMap {
     pub schema_version: String,
@@ -88,6 +99,7 @@ pub struct Node {
 ```
 
 ### 映射关系
+
 - `Trace` → `Node` (每个trace作为一个节点)
 - `Location` → `CodeRef` (code_refs数组)
 - `trace_text_diagram` → `Node.summary` + `Node.children`
@@ -95,4 +107,5 @@ pub struct Node {
 - `mermaid_diagram` → `edges` (自动生成调用边)
 
 ## Date
+
 2026-01-14

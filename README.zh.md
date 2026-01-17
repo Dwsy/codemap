@@ -37,18 +37,18 @@ CodeMap 是一个 AI 驱动的代码可视化工具，使用 Rust + Tauri + Reac
 
 ### 🎨 技术栈
 
-| 层级 | 技术 |
-|------|------|
-| **后端** | Rust + Tauri 2.x |
-| **前端** | React 18 + TypeScript + Vite 8 |
-| **状态管理** | Zustand + Immer |
-| **样式** | Tailwind CSS |
-| **图标** | Lucide React + @react-symbols/icons |
-| **编辑器** | Monaco Editor |
-| **AI 集成** | Pi CLI (gemini-3-flash) + Claude Code |
-| **构建工具** | Bun + TypeScript |
-| **包管理** | pnpm |
-| **版本控制** | Git + GitHub |
+| 层级         | 技术                                  |
+| ------------ | ------------------------------------- |
+| **后端**     | Rust + Tauri 2.x                      |
+| **前端**     | React 18 + TypeScript + Vite 8        |
+| **状态管理** | Zustand + Immer                       |
+| **样式**     | Tailwind CSS                          |
+| **图标**     | Lucide React + @react-symbols/icons   |
+| **编辑器**   | Monaco Editor                         |
+| **AI 集成**  | Pi CLI (gemini-3-flash) + Claude Code |
+| **构建工具** | Bun + TypeScript                      |
+| **包管理**   | pnpm                                  |
+| **版本控制** | Git + GitHub                          |
 
 ---
 
@@ -177,24 +177,28 @@ cd ~/.pi/agent/skills/codemap
 ### 安装步骤
 
 1. **克隆仓库**（如果还没有）
+
 ```bash
 git clone https://github.com/Dwsy/codemap.git
 cd codemap
 ```
 
 2. **安装依赖**
+
 ```bash
 cd client
 pnpm install
 ```
 
 3. **构建 Tauri 后端**
+
 ```bash
 cd client/src-tauri
 cargo build --release
 ```
 
 4. **启动应用**
+
 ```bash
 cd ..
 ./run.sh start
@@ -367,6 +371,7 @@ export TAUKIT_ROOT="/path/to/tauri"
 ### 调试
 
 #### 前端调试
+
 ```bash
 # 开启调试模式
 cd client
@@ -374,6 +379,7 @@ pnpm run dev --debug
 ```
 
 #### 后端调试
+
 ```bash
 # 构建调试版本
 cd client/src-tauri
@@ -381,6 +387,7 @@ cargo build --debug
 ```
 
 #### 日志查看
+
 ```bash
 # 前端日志
 tail -f ~/.codemap/logs/frontend.log
@@ -454,6 +461,7 @@ pnpm install
 **原因**：DOM 元素上不能有 isActive 属性
 
 **解决**：
+
 ```typescript
 // ❌ 错误
 <div isActive={true} />
@@ -467,6 +475,7 @@ pnpm install
 **原因**：API 配额超限
 
 **解决**：切换到不同模型或提供商
+
 ```rust
 // PiProvider.ts
 '--model', 'gemini-2.5-flash',  // 或
@@ -479,13 +488,14 @@ pnpm install
 **原因**：CDN source map 不存在
 
 **解决**：拦截 fetch 和 XMLHttpRequest
+
 ```typescript
 // monaco-config.ts
-window.addEventListener('fetch', (event) => {
-  if (event.url.endsWith('.map')) {
-    event.preventDefault()
+window.addEventListener("fetch", (event) => {
+  if (event.url.endsWith(".map")) {
+    event.preventDefault();
   }
-})
+});
 ```
 
 ---
@@ -541,3 +551,27 @@ SOFTWARE.
 ---
 
 **🎉 享受使用 CodeMap！**
+---
+
+## 🎨 UI 深度重新设计完成说明
+
+**完成时间**: 2026-01-15  
+**状态**: ✅ 85% 完成
+
+### 使用方法
+```bash
+./run.sh start
+```
+
+访问: http://localhost:1420/
+
+### 新增功能
+- 17 个语义化颜色
+- 深色/浅色双主题 + 系统检测
+- JetBrains Mono + IBM Plex Sans 字体
+- 16 个新组件（Badge, Card, Alert, Loading 等）
+- 玻璃态效果（Header）
+- 流畅动画（200ms 标准时长）
+
+### 文档
+查看 `docs/PROJECT_FINAL_CONFIRMATION.md` 获取完整信息。

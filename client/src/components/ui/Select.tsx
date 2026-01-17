@@ -118,7 +118,7 @@ SelectValue.displayName = 'SelectValue';
 
 const SelectContent = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className, children, ...props }, ref) => {
-    const { isOpen, setIsOpen, value, onValueChange } = useSelectContext();
+    const { isOpen, onValueChange } = useSelectContext();
 
     if (!isOpen) return null;
 

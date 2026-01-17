@@ -5,6 +5,7 @@
 ### 新增文件
 
 #### 1. Rust 后端模块
+
 - **executor.rs** (3,690 字节)
   - `execute_command` - 通过 tmux 执行命令
   - `execute_command_stream` - 流式执行并返回输出
@@ -12,6 +13,7 @@
   - `extract_json_from_output` - 从输出中提取 JSON
 
 #### 2. Node.js 生成器
+
 - **generator.js** (5,752 字节)
   - `generateCodemap` - 生成 CodeMap JSON
   - `analyzeCode` - 分析单个文件
@@ -21,11 +23,13 @@
 ### 修改文件
 
 #### Rust 后端
+
 - **main.rs** - 添加 executor 模块和 Tauri 命令
 - **commands.rs** - 添加 `generate_codemap_with_pi` 命令
 - **codemap_v2.rs** - 修复编译错误（所有权问题）
 
 #### 前端 Store
+
 - **codemapStore.ts** - 添加 async actions
   - `createCodeMap` - 创建 CodeMap
   - `loadCodeMapById` - 加载 CodeMap
@@ -33,6 +37,7 @@
   - `loadSuggestedTopics` - 加载建议主题
 
 #### 前端组件
+
 - **MainPanel.tsx** - 集成 CodeMap 创建功能
   - Demo 模式文件选择
   - 调用 `createCodeMap` action
@@ -78,6 +83,7 @@ npm run dev
 ## 📝 数据流示例
 
 ### 输入
+
 ```json
 {
   "query": "用户登录流程",
@@ -87,6 +93,7 @@ npm run dev
 ```
 
 ### 输出
+
 ```json
 {
   "schema_version": "0.1",
@@ -149,6 +156,7 @@ npm run dev
 ## 🎉 下一步
 
 1. **安装依赖并运行**
+
    ```bash
    cd ~/.pi/agent/skills/codemap/client
    npm install

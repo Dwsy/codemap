@@ -42,17 +42,17 @@ export interface GenerateOptions {
   query: string;
   files: string[];
   projectRoot: string;
-  modelTier: 'fast' | 'smart';
-  provider?: 'pi' | 'claude';
+  modelTier: "fast" | "smart";
+  provider?: "pi" | "claude";
 }
 
 export interface AnalyzeOptions {
   filePath: string;
-  provider?: 'pi' | 'claude';
+  provider?: "pi" | "claude";
 }
 
 export interface AIProvider {
   name: string;
-  generate(prompt: string, modelTier: 'fast' | 'smart'): Promise<CodeMap>;
+  generate(prompt: string, modelTier: "fast" | "smart"): Promise<CodeMap>;
   analyze(prompt: string): Promise<any>;
 }
