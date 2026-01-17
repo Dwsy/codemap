@@ -55,7 +55,8 @@ export function getDashboardStyles(): string {
     .view-mode.active { display: block; }
     .section { margin-bottom: 15px; padding: 20px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border); }
     .section-title { margin-bottom: 15px; font-size: 1.1rem; font-weight: 600; color: var(--text-primary); }
-    .mermaid-container { background: var(--bg-secondary, #f8f9fa); padding: 20px; border-radius: 8px; }
+    .mermaid-container { background: var(--bg-secondary, #f8f9fa); padding: 20px; border-radius: 8px; min-height: 300px; overflow-x: auto; }
+    .mermaid-container .mermaid { min-height: 200px; }
     .mermaid-container pre { margin: 0; }
     .infographic-container { width: 100%; min-height: 400px; background: var(--bg-secondary, #f8f9fa); border-radius: 8px; display: flex; align-items: center; justify-content: center; }
     .infographic-container #infographic-render { width: 100%; height: 100%; }
