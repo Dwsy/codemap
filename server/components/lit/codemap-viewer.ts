@@ -1,5 +1,3 @@
-import { html, render } from 'lit-html';
-
 interface CodeMap {
   id: string;
   title: string;
@@ -14,7 +12,7 @@ interface CodeMapViewerOptions {
   initialViewMode?: 'diagram' | 'infographic' | 'traces';
 }
 
-export class CodeMapViewer {
+class CodeMapViewer {
   private container: HTMLElement;
   private codemap: CodeMap | null = null;
   private viewMode: 'diagram' | 'infographic' | 'traces' = 'diagram';
@@ -36,7 +34,6 @@ export class CodeMapViewer {
   setCodemap(codemap: CodeMap) {
     this.codemap = codemap;
     this.render();
-    this.renderMermaid();
   }
 
   setViewMode(mode: 'diagram' | 'infographic' | 'traces') {
@@ -68,12 +65,33 @@ export class CodeMapViewer {
     }
   }
 
-  private renderMermaid() {
+  private async renderMermaid() {
     if (typeof window.mermaid === 'undefined' || !this.codemap) return;
 
-    const mermaidContainer = this.container.querySelector('.mermaid-container');
-    if (mermaidContainer) {
-      window.mermaid.init(undefined, mermaidContainer.querySelectorAll('.mermaid'));
+    const mermaidElement = this.container.querySelector('.mermaid') as HTMLElement;
+    if (mermaidElement) {
+      mermaidElement.textContent = this.codemap.mermaidDiagram;
+      mermaidElement.removeAttribute('data-processed');
+      
+      try {
+        await window.mermaid.run({ 
+          nodes: [mermaidElement],
+          suppressErrors: false
+        });
+      } catch (error: any) {
+        console.error('Mermaid render error:', error);
+        // 显示友好的错误信息和原始图表代码
+        mermaidElement.innerHTML = `
+          <div style="padding: 20px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 4px;">
+            <h4 style="margin: 0 0 10px 0; color: #856404;">⚠️ 图表渲染失败</h4>
+            <p style="margin: 0 0 10px 0; color: #856404;">${this.escapeHtml(error.message || '未知错误')}</p>
+            <details style="margin-top: 10px;">
+              <summary style="cursor: pointer; color: #856404;">查看原始图表代码</summary>
+              <pre style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 4px; overflow-x: auto;"><code>${this.escapeHtml(this.codemap.mermaidDiagram)}</code></pre>
+            </details>
+          </div>
+        `;
+      }
     }
   }
 
@@ -124,7 +142,8 @@ export class CodeMapViewer {
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
   }
 
   private toggleTrace(traceId: string) {
@@ -135,12 +154,54 @@ export class CodeMapViewer {
     toggle?.classList.toggle('collapsed');
   }
 
-  private getTemplate() {
+  private getTemplate(): string {
     if (!this.codemap) {
-      return html`<div class="inline-viewer-empty">Select a CodeMap from the sidebar to view</div>`;
+      return '<div class="inline-viewer-empty">Select a CodeMap from the sidebar to view</div>';
     }
 
-    return html`
+    const openLinkBtn = this.isFragment
+      ? `<a href="/view/${this.codemap.id}" class="btn" target="_blank">
+          <i class="fa-solid fa-up-right-from-square"></i> 新标签页打开
+        </a>`
+      : '';
+
+    const tracesHtml = this.codemap.traces.map((trace) => {
+      const traceTextDiagram = trace.traceTextDiagram
+        ? `<h4 class="subsection-title">调用树</h4>
+          <pre class="text-diagram">${this.escapeHtml(trace.traceTextDiagram)}</pre>`
+        : '';
+
+      const locations = trace.locations?.length
+        ? `<h4 class="subsection-title">关键代码节点</h4>
+          <div class="locations">
+            ${trace.locations.map((loc: any) => `
+              <div class="location-item">
+                <span class="location-id">${this.escapeHtml(loc.id)}</span>
+                <div class="location-path">${this.escapeHtml(loc.path)}</div>
+                <div class="location-line">行号: ${loc.lineNumber}</div>
+                <div class="location-code">
+                  <pre><code class="language-typescript">${this.escapeHtml(loc.lineContent)}</code></pre>
+                </div>
+              </div>
+            `).join('')}
+          </div>`
+        : '';
+
+      return `
+        <div class="trace">
+          <div class="trace-header" data-trace-id="${trace.id}">
+            <h3>${this.escapeHtml(trace.title)}</h3>
+            <span class="trace-toggle" id="toggle-${trace.id}">▼</span>
+          </div>
+          <div class="trace-content" id="content-${trace.id}">
+            ${traceTextDiagram}
+            ${locations}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    return `
       <div class="inline-viewer-header">
         <h2 class="inline-viewer-title">${this.escapeHtml(this.codemap.title)}</h2>
         <div class="inline-viewer-actions">
@@ -162,11 +223,7 @@ export class CodeMapViewer {
           >
             <i class="fa-solid fa-list"></i> 追踪链路
           </button>
-          ${this.isFragment
-            ? html`<a href="/view/${this.codemap.id}" class="btn" target="_blank">
-                <i class="fa-solid fa-up-right-from-square"></i> 新标签页打开
-              </a>`
-            : ''}
+          ${openLinkBtn}
         </div>
       </div>
 
@@ -175,7 +232,7 @@ export class CodeMapViewer {
           <div class="section">
             <h3 class="section-title">全局流程图</h3>
             <div class="mermaid-container">
-              <pre class="mermaid">${this.escapeHtml(this.codemap.mermaidDiagram)}</pre>
+              <div class="mermaid"></div>
             </div>
           </div>
         </div>
@@ -192,42 +249,7 @@ export class CodeMapViewer {
         <div class="view-mode ${this.viewMode === 'traces' ? 'active' : ''}">
           <div class="section">
             <h3 class="section-title">详细追踪链路</h3>
-            ${this.codemap.traces.map(
-              (trace) => html`
-                <div class="trace">
-                  <div
-                    class="trace-header"
-                    data-trace-id="${trace.id}"
-                  >
-                    <h3>${this.escapeHtml(trace.title)}</h3>
-                    <span class="trace-toggle" id="toggle-${trace.id}">▼</span>
-                  </div>
-                  <div class="trace-content" id="content-${trace.id}">
-                    ${trace.traceTextDiagram
-                      ? html`<h4 class="subsection-title">调用树</h4>
-                          <pre class="text-diagram">${this.escapeHtml(trace.traceTextDiagram)}</pre>`
-                      : ''}
-                    ${trace.locations?.length
-                      ? html`<h4 class="subsection-title">关键代码节点</h4>
-                          <div class="locations">
-                            ${trace.locations.map(
-                              (loc) => html`
-                                <div class="location-item">
-                                  <span class="location-id">${this.escapeHtml(loc.id)}</span>
-                                  <div class="location-path">${this.escapeHtml(loc.path)}</div>
-                                  <div class="location-line">行号: ${loc.lineNumber}</div>
-                                  <div class="location-code">
-                                    <pre><code>${this.escapeHtml(loc.lineContent)}</code></pre>
-                                  </div>
-                                </div>
-                              `
-                            )}
-                          </div>`
-                      : ''}
-                  </div>
-                </div>
-              `
-            )}
+            ${tracesHtml}
           </div>
         </div>
       </div>
@@ -235,7 +257,15 @@ export class CodeMapViewer {
   }
 
   render() {
-    render(this.getTemplate(), this.container);
+    this.container.innerHTML = this.getTemplate();
+    
+    // 渲染完成后处理 Mermaid 和代码高亮
+    setTimeout(() => {
+      this.renderMermaid();
+      if (typeof window.Prism !== 'undefined') {
+        window.Prism.highlightAllUnder(this.container);
+      }
+    }, 0);
   }
 
   destroy() {
@@ -258,3 +288,5 @@ export function initCodeMapViewer(selector: string, options: CodeMapViewerOption
   }
   return new CodeMapViewer(container as HTMLElement, options);
 }
+
+export default CodeMapViewer;
