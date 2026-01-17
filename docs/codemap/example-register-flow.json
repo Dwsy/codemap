@@ -1,0 +1,84 @@
+{
+  "schemaVersion": 1,
+  "title": "用户注册流程",
+  "description": "从用户填写注册表单到创建账户的完整流程",
+  "mermaidDiagram": "graph TB\n    subgraph 前端\n        A[注册表单]\n        B[表单验证]\n        C[提交请求]\n    end\n    subgraph 后端\n        D[AuthController.register] --> E[AuthService.validateInput]\n        E -->|通过| F[AuthService.checkDuplicate]\n        F -->|不存在| G[AuthService.createUser]\n        G --> H[AuthService.generateToken]\n    end\n    subgraph 数据库\n        F -->|查询| DB1[(User表)]\n        G -->|插入| DB2[(User表)]\n    end",
+  "traces": [
+    {
+      "id": "1",
+      "title": "填写注册表单",
+      "description": "用户在前端填写注册信息",
+      "locations": [
+        {
+          "id": "1a",
+          "path": "/src/components/RegisterForm.vue",
+          "lineNumber": 28,
+          "lineContent": "const handleSubmit = async () => { const result = await authApi.register(form); };",
+          "title": "表单提交",
+          "description": "处理用户注册请求"
+        }
+      ],
+      "traceTextDiagram": "前端表单\n└── handleSubmit < -- 1a",
+      "traceGuide": "## Motivation\n\n新用户需要创建账户才能使用系统功能。\n\n## Details\n\n用户填写注册信息后，调用后端 API [1a] 提交注册数据。\n\n注册流程：\n\n```infographic\ninfographic sequence-snake-steps-simple\ndata\n  title 注册步骤\n  sequences\n    - label 填写信息\n      desc 用户名/邮箱/密码\n    - label 前端验证\n      desc 格式检查\n    - label 提交请求\n      desc POST /api/auth/register\n    - label 后端验证\n      desc 数据校验\n    - label 创建账户\n      desc 保存到数据库\n    - label 返回 Token\n      desc 自动登录\ntheme\n  palette\n    - #3b82f6\n    - #10b981\n    - #f97316\n    - #8b5cf6\n```"
+    },
+    {
+      "id": "2",
+      "title": "输入验证",
+      "description": "后端验证输入数据的合法性",
+      "locations": [
+        {
+          "id": "2a",
+          "path": "/src/controllers/AuthController.ts",
+          "lineNumber": 30,
+          "lineContent": "async register(req: Request) { const validated = await this.authService.validateInput(req.body); }",
+          "title": "控制器入口",
+          "description": "接收注册请求"
+        },
+        {
+          "id": "2b",
+          "path": "/src/services/AuthService.ts",
+          "lineNumber": 18,
+          "lineContent": "validateInput(data: RegisterDTO) { if (!data.username || !data.email || !data.password) throw new Error('缺少必填字段'); if (data.password.length < 8) throw new Error('密码长度不足'); return data; }",
+          "title": "数据验证",
+          "description": "验证必填字段和格式"
+        }
+      ],
+      "traceTextDiagram": "输入验证\n├── AuthController.register < -- 2a\n└── AuthService.validateInput < -- 2b",
+      "traceGuide": "## Motivation\n\n确保输入数据完整且符合要求，防止无效数据进入系统。\n\n## Details\n\n控制器接收请求 [2a]，调用服务层验证输入。\n\n服务层检查必填字段和密码长度 [2b]，不符合则抛出错误。"
+    },
+    {
+      "id": "3",
+      "title": "检查重复",
+      "description": "确保用户名和邮箱未被使用",
+      "locations": [
+        {
+          "id": "3a",
+          "path": "/src/services/AuthService.ts",
+          "lineNumber": 35,
+          "lineContent": "async checkDuplicate(username: string, email: string) { const existingUser = await this.userRepo.findByUsernameOrEmail(username, email); if (existingUser) throw new Error('用户已存在'); }",
+          "title": "重复检查",
+          "description": "查询数据库检查重复"
+        }
+      ],
+      "traceTextDiagram": "重复检查\n└── checkDuplicate < -- 3a",
+      "traceGuide": "## Motivation\n\n防止同一个用户名或邮箱被重复注册。\n\n## Details\n\n在创建用户前，先查询数据库 [3a]，确保用户名和邮箱都未被使用。"
+    },
+    {
+      "id": "4",
+      "title": "创建账户",
+      "description": "将新用户信息保存到数据库",
+      "locations": [
+        {
+          "id": "4a",
+          "path": "/src/services/AuthService.ts",
+          "lineNumber": 50,
+          "lineContent": "async createUser(data: RegisterDTO) { const hashedPassword = await bcrypt.hash(data.password, 10); const user = await this.userRepo.create({ ...data, password: hashedPassword }); return user; }",
+          "title": "用户创建",
+          "description": "加密密码并保存用户"
+        }
+      ],
+      "traceTextDiagram": "账户创建\n└── createUser < -- 4a",
+      "traceGuide": "## Motivation\n\n密码需要加密存储，保护用户信息安全。\n\n## Details\n\n使用 bcrypt 加密密码（盐值 10）[4a]，然后创建用户记录并返回。"
+    }
+  ]
+}

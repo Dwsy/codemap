@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 1,
+  "title": "用户登录流程",
+  "description": "从用户提交登录表单到生成 JWT Token 的完整认证流程",
+  "mermaidDiagram": "graph TB\n    subgraph 前端\n        A[登录表单]\n        B[提交请求]\n    end\n    subgraph 后端\n        C[AuthController.login] --> D[AuthService.validate]\n        D -->|成功| E[AuthService.generateToken]\n        D -->|失败| F[返回错误]\n        E --> G[返回 Token]\n    end\n    subgraph 数据库\n        D -->|查询| DB[(User表)]\n    end",
+  "traces": [
+    {
+      "id": "1",
+      "title": "提交登录表单",
+      "description": "用户在前端输入用户名和密码并提交",
+      "locations": [
+        {
+          "id": "1a",
+          "path": "/src/components/LoginForm.vue",
+          "lineNumber": 32,
+          "lineContent": "const handleLogin = async () => { const result = await authApi.login({ username, password }); };",
+          "title": "表单提交",
+          "description": "处理用户登录请求"
+        }
+      ],
+      "traceTextDiagram": "前端表单\n└── handleLogin < -- 1a",
+      "traceGuide": "## Motivation\n\n用户需要通过用户名和密码进行身份验证，获取访问令牌。\n\n## Details\n\n用户填写表单后，调用后端 API [1a] 提交登录数据。\n\n登录流程步骤：\n\n```infographic\ninfographic sequence-snake-steps-compact-card\ndata\n  title 登录步骤\n  sequences\n    - label 输入凭证\n      desc 用户名 + 密码\n    - label 提交表单\n      desc POST /api/auth/login\n    - label 验证凭证\n      desc 检查用户名和密码\n    - label 生成 Token\n      desc JWT 签发\n    - label 返回结果\n      desc Token + 用户信息\ntheme\n  palette\n    - #3b82f6\n    - #10b981\n    - #f97316\n    - #8b5cf6\n```"
+    },
+    {
+      "id": "2",
+      "title": "验证用户凭证",
+      "description": "后端验证用户名和密码是否正确",
+      "locations": [
+        {
+          "id": "2a",
+          "path": "/src/controllers/AuthController.ts",
+          "lineNumber": 15,
+          "lineContent": "async login(req: Request) { const user = await this.authService.validate(req.body.username, req.body.password); }",
+          "title": "控制器入口",
+          "description": "接收登录请求"
+        },
+        {
+          "id": "2b",
+          "path": "/src/services/AuthService.ts",
+          "lineNumber": 28,
+          "lineContent": "async validate(username: string, password: string) { const user = await this.userRepo.findByUsername(username); return user && await bcrypt.compare(password, user.password) ? user : null; }",
+          "title": "密码验证",
+          "description": "使用 bcrypt 验证密码"
+        }
+      ],
+      "traceTextDiagram": "后端验证\n├── AuthController.login < -- 2a\n└── AuthService.validate < -- 2b",
+      "traceGuide": "## Motivation\n\n确保只有合法用户才能登录，密码需要加密存储和验证。\n\n## Details\n\n控制器接收请求 [2a]，调用服务层验证凭证。\n\n服务层查找用户并验证密码 [2b]，使用 bcrypt 比较加密后的密码。"
+    },
+    {
+      "id": "3",
+      "title": "生成 JWT Token",
+      "description": "验证成功后生成访问令牌",
+      "locations": [
+        {
+          "id": "3a",
+          "path": "/src/services/AuthService.ts",
+          "lineNumber": 45,
+          "lineContent": "generateToken(user: User) { return jwt.sign({ id: user.id, username: user.username }, SECRET, { expiresIn: '24h' }); }",
+          "title": "Token 生成",
+          "description": "使用 JWT 签发令牌"
+        }
+      ],
+      "traceTextDiagram": "Token 生成\n└── generateToken < -- 3a",
+      "traceGuide": "## Motivation\n\n使用 JWT Token 实现无状态认证，避免每次请求都查询数据库。\n\n## Details\n\n验证成功后，生成包含用户 ID 和用户名的 JWT [3a]，有效期 24 小时。"
+    }
+  ]
+}

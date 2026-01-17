@@ -1,0 +1,148 @@
+{
+  "schemaVersion": 1,
+  "title": "CodeMap Server 架构",
+  "description": "CodeMap HTTP 服务器的完整架构和执行流程",
+  "mermaidDiagram": "graph TB\n    subgraph 客户端\n        A[浏览器/API客户端]\n    end\n    subgraph Hono服务器\n        B[HTTP请求] --> C{路由匹配}\n        C -->|/api/projects| D[项目管理]\n        C -->|/api/codemap| E[CodeMap上传]\n        C -->|/view/:id| F[可视化渲染]\n    end\n    subgraph 存储层\n        H[projects.json]\n        I[codemaps/*.json]\n    end\n    subgraph 渲染引擎\n        J[MarkdownIt]\n        K[Prism.js]\n        L[Mermaid.js]\n        M[AntV Infographic]\n    end\n    D --> H\n    E --> I\n    F --> J\n    F --> K\n    F --> L\n    J --> M",
+  "traces": [
+    {
+      "id": "1",
+      "title": "服务器初始化",
+      "description": "启动 HTTP 服务器并配置中间件",
+      "locations": [
+        {
+          "id": "1a",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 3,
+          "lineContent": "import { Hono } from 'hono';\nimport { cors } from 'hono/cors';\nimport { storage } from './storage.js';\nimport MarkdownIt from 'markdown-it';\nimport infographicPlugin from 'markdown-it-infographic';",
+          "title": "导入依赖",
+          "description": "导入 Hono 框架、CORS 中间件和渲染引擎"
+        },
+        {
+          "id": "1b",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 11,
+          "lineContent": "const app = new Hono();\nconst md = new MarkdownIt({ html: true });\nmd.use(infographicPlugin);",
+          "title": "初始化应用",
+          "description": "创建 Hono 实例并配置 Markdown 解析器"
+        },
+        {
+          "id": "1c",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 15,
+          "lineContent": "app.use('*', cors({\n  origin: '*',\n  allowMethods: ['GET', 'POST', 'DELETE', 'OPTIONS'],\n  allowHeaders: ['Content-Type', 'Authorization'],\n}));",
+          "title": "配置 CORS",
+          "description": "启用跨域资源共享"
+        }
+      ],
+      "traceTextDiagram": "服务器初始化\n├── 导入依赖 < -- 1a\n├── 创建 Hono 实例 < -- 1b\n└── 配置 CORS 中间件 < -- 1c",
+      "traceGuide": "## Motivation\n\n服务器初始化是启动 CodeMap 服务的第一步，需要配置 Web 框架、CORS 策略和渲染引擎。\n\n## Details\n\n首先导入所有必要的依赖 [1a]，包括 Hono 框架、CORS 中间件、存储模块和渲染引擎。\n\n然后创建 Hono 应用实例，并初始化 MarkdownIt 解析器，启用 infographic 插件 [1b]，用于在 Markdown 中渲染信息图。\n\n最后配置全局 CORS 策略 [1c]，允许所有来源的跨域请求，支持 GET、POST、DELETE 方法。\n\n渲染引擎架构：\n\n```infographic\ninfographic list-row-horizontal-icon-arrow\ndata\n  title 渲染引擎\n  lists\n    - label MarkdownIt\n      desc Markdown 解析\n      icon file text\n    - label Prism.js\n      desc 代码高亮\n      icon code\n    - label Mermaid.js\n      desc 流程图\n      icon diagram\n    - label AntV Infographic\n      desc 信息图\n      icon chart\ntheme\n  palette\n    - #3b82f6\n    - #10b981\n    - #f97316\n    - #8b5cf6\n```"
+    },
+    {
+      "id": "2",
+      "title": "CodeMap 上传与存储",
+      "description": "接收客户端上传的 CodeMap JSON 并持久化存储",
+      "locations": [
+        {
+          "id": "2a",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 24,
+          "lineContent": "app.post('/api/codemap', async (c) => {\n  const { projectPath, codemap } = await c.req.json();\n  if (!projectPath || !codemap) return c.json({ error: '缺少参数' }, 400);\n  return c.json(storage.saveCodeMap(projectPath, codemap));\n});",
+          "title": "CodeMap 上传接口",
+          "description": "处理 POST /api/codemap 请求"
+        },
+        {
+          "id": "2b",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/storage.ts",
+          "lineNumber": 45,
+          "lineContent": "saveCodeMap(projectPath: string, codemap: any) {\n    ensureStorage();\n    const id = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;\n    const codemapData = {\n      id,\n      projectPath,\n      ...codemap,\n      createdAt: new Date().toISOString()\n    };",
+          "title": "生成 CodeMap ID",
+          "description": "为每个 CodeMap 生成唯一标识符"
+        },
+        {
+          "id": "2c",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/storage.ts",
+          "lineNumber": 56,
+          "lineContent": "const filePath = join(CODEMAPS_DIR, `${id}.json`);\nwriteFileSync(filePath, JSON.stringify(codemapData, null, 2));",
+          "title": "持久化存储",
+          "description": "将 CodeMap 保存为 JSON 文件"
+        }
+      ],
+      "traceTextDiagram": "CodeMap 上传流程\n├── 接收 HTTP 请求 < -- 2a\n├── 生成唯一 ID < -- 2b\n└── 写入 JSON 文件 < -- 2c",
+      "traceGuide": "## Motivation\n\nCodeMap 需要持久化存储以便后续查看和管理。使用文件系统存储简单可靠。\n\n## Details\n\n客户端通过 POST /api/codemap 上传 CodeMap [2a]，包含项目路径和 CodeMap 数据。\n\n服务器为每个 CodeMap 生成唯一的 ID（基于时间戳和随机字符串）[2b]，并添加元数据（创建时间）。\n\n最后将完整的 CodeMap 数据序列化为 JSON 格式，保存到 storage/codemaps 目录 [2c]，文件名为 `{id}.json`。\n\n存储流程：\n\n```infographic\ninfographic sequence-snake-steps-simple\ndata\n  title 存储流程\n  sequences\n    - label 接收请求\n      desc POST /api/codemap\n    - label 生成 ID\n      desc 时间戳 + 随机字符串\n    - label 写入文件\n      desc storage/codemaps/\n    - label 返回结果\n      desc 包含 ID 和数据\ntheme\n  palette\n    - #3b82f6\n    - #10b981\n    - #f97316\n    - #8b5cf6\n```"
+    },
+    {
+      "id": "3",
+      "title": "HTML 可视化渲染",
+      "description": "将 CodeMap 数据渲染为交互式 HTML 页面",
+      "locations": [
+        {
+          "id": "3a",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 36,
+          "lineContent": "app.get('/view/:id', (c) => {\n  const id = c.req.param('id');\n  const codemap = storage.getCodeMap(id);\n  if (!codemap) {\n    return c.text('CodeMap 不存在', 404);\n  }\n  return c.html(generateHTML(codemap, id));\n});",
+          "title": "可视化接口",
+          "description": "处理 GET /view/:id 请求"
+        },
+        {
+          "id": "3b",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 85,
+          "lineContent": "function generateHTML(codemap: any, id: string): string {\n  const { title, description, mermaidDiagram, traces } = codemap;",
+          "title": "HTML 生成函数",
+          "description": "构建完整的 HTML 页面"
+        },
+        {
+          "id": "3c",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 175,
+          "lineContent": "function renderMarkdown(text: string): string {\n  return md.render(text);\n}",
+          "title": "Markdown 渲染",
+          "description": "使用 markdown-it 渲染 Markdown 内容"
+        }
+      ],
+      "traceTextDiagram": "HTML 渲染流程\n├── 获取 CodeMap 数据 < -- 3a\n├── 生成 HTML 模板 < -- 3b\n└── 渲染 Markdown 内容 < -- 3c",
+      "traceGuide": "## Motivation\n\n将 CodeMap 数据以可视化方式展示，帮助用户理解代码流程。\n\n## Details\n\n访问 /view/:id 时，服务器从存储中加载 CodeMap 数据 [3a]，如果不存在则返回 404。\n\n然后调用 generateHTML 函数 [3b]，生成包含标题、描述、Mermaid 流程图和追踪链路的完整 HTML 页面。\n\n对于每个 Trace 的 guide 内容，使用 MarkdownIt 渲染 [3c]，支持代码高亮和信息图嵌入。\n\n页面结构：\n\n```infographic\ninfographic hierarchy-tree-curved-line-rounded-rect-node\ndata\n  root\n    label CodeMap 页面\n    children\n      - label 头部\n        children\n          - label 标题\n          - label 描述\n      - label 流程图\n        children\n          - label Mermaid\n      - label 追踪链路\n        children\n          - label 调用树\n          - label 代码节点\n          - label 详细指南\ntheme\n  palette\n    - #3b82f6\n    - #10b981\n    - #f97316\n    - #8b5cf6\n```"
+    },
+    {
+      "id": "4",
+      "title": "渲染引擎集成",
+      "description": "集成多个渲染引擎提供丰富的视觉效果",
+      "locations": [
+        {
+          "id": "4a",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 8,
+          "lineContent": "import MarkdownIt from 'markdown-it';\nimport infographicPlugin from 'markdown-it-infographic';",
+          "title": "Markdown 引擎",
+          "description": "用于渲染 Markdown 内容和代码块"
+        },
+        {
+          "id": "4b",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 130,
+          "lineContent": "  <link href=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism.min.css\" rel=\"stylesheet\" />",
+          "title": "Prism.js 语法高亮",
+          "description": "为代码块提供语法高亮"
+        },
+        {
+          "id": "4c",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 132,
+          "lineContent": "  <script src=\"https://unpkg.com/@antv/infographic@latest/dist/infographic.min.js\"></script>",
+          "title": "AntV Infographic",
+          "description": "渲染信息图"
+        },
+        {
+          "id": "4d",
+          "path": "/Users/dengwenyu/.pi/agent/skills/codemap-renderer/server/index.ts",
+          "lineNumber": 170,
+          "lineContent": "  <script src=\"https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js\"></script>\n  <script src=\"https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js\"></script>",
+          "title": "Mermaid 流程图",
+          "description": "渲染 Mermaid 流程图"
+        }
+      ],
+      "traceTextDiagram": "渲染引擎集成\n├── MarkdownIt < -- 4a\n├── Prism.js < -- 4b\n├── AntV Infographic < -- 4c\n└── Mermaid.js < -- 4d",
+      "traceGuide": "## Motivation\n\n通过集成多个渲染引擎，提供代码语法高亮、流程图、信息图等丰富的可视化效果。\n\n## Details\n\nMarkdownIt [4a] 用于解析和渲染 Markdown 内容，支持通过插件扩展功能。\n\nPrism.js [4b] 为代码块提供语法高亮，支持多种编程语言，使用浅色主题。\n\nAntV Infographic [4c] 用于渲染信息图，通过 ```infographic 代码块嵌入。\n\nMermaid.js [4d] 用于渲染 Mermaid 流程图，展示代码执行流程。\n\n技术栈对比：\n\n```infographic\ninfographic compare-quadrant-quarter-simple-card\ndata\n  compares\n    - label 文本渲染\n      children\n        - label MarkdownIt\n          desc Markdown 解析\n        - label Prism.js\n          desc 代码高亮\n    - label 图表渲染\n      children\n        - label Mermaid.js\n          desc 流程图\n        - label AntV Infographic\n          desc 信息图\ntheme\n  palette\n    - #3b82f6\n    - #10b981\n    - #f97316\n    - #8b5cf6\n```"
+    }
+  ]
+}
