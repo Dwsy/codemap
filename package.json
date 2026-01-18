@@ -9,12 +9,13 @@
     "dev:client": "cd client && bun run dev",
     "dev:vapor": "cd client && VITE_ENABLE_VAPOR=true bun run dev",
     "build": "cd client && bun run build",
-    "test": "cd client && bun run test"
+    "test": "cd client && bun run test",
+    "add-test-data": "bun run scripts/add-test-data.ts"
   },
   "dependencies": {
+    "@md-reader/markdown-it-mermaid": "0.6.0-beta.0",
     "hono": "^4.0.0",
     "markdown-it": "^14.1.0",
-    "@md-reader/markdown-it-mermaid": "^0.6.0-beta.0",
     "markdown-it-infographic": "^1.0.0"
   },
   "devDependencies": {
