@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Infographic Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .error { color: red; padding: 10px; background: #fee; border: 1px solid #fcc; }
+        .success { color: green; padding: 10px; background: #efe; border: 1px solid #cfc; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Infographic 渲染测试</h1>
+        <div id="status"></div>
+        <div id="output"></div>
+    </div>
+
+    <script type="module">
+        import MarkdownIt from 'https://esm.sh/markdown-it@14.1.0';
+        import infographicPlugin from 'https://esm.sh/markdown-it-infographic@1.0.0';
+
+        const status = document.getElementById('status');
+        const output = document.getElementById('output');
+
+        const testMarkdown = \`
+## 测试标题
+
+这是一个测试信息图：
+
+\`\`\`infographic
+infographic list-row-horizontal-icon-arrow
+data
+  title 渲染引擎
+  lists
+    - label MarkdownIt
+      desc Markdown 解析
+      icon file text
+    - label Prism.js
+      desc 代码高亮
+      icon code
+theme
+  palette
+    - #3b82f6
+    - #10b981
+\`\`\`
+
+测试结束。
+\`;
+
+        try {
+            status.innerHTML = '<div class="success">✅ 开始初始化 MarkdownIt...</div>';
+
+            const md = new MarkdownIt({
+                html: true,
+                linkify: true,
+                breaks: true
+            });
+
+            status.innerHTML += '<div class="success">✅ MarkdownIt 初始化成功</div>';
+            status.innerHTML += '<div class="success">✅ 正在注册 infographic 插件...</div>';
+
+            md.use(infographicPlugin);
+
+            status.innerHTML += '<div class="success">✅ 插件注册成功</div>';
+            status.innerHTML += '<div class="success">✅ 正在渲染 Markdown...</div>';
+
+            const html = md.render(testMarkdown);
+
+            status.innerHTML += '<div class="success">✅ 渲染完成</div>';
+            output.innerHTML = html;
+
+            console.log('Rendered HTML:', html);
+
+            // 检查是否有 SVG 生成
+            setTimeout(() => {
+                const svgs = output.querySelectorAll('svg');
+                if (svgs.length > 0) {
+                    status.innerHTML += '<div class="success">✅ 成功生成 ' + svgs.length + ' 个 SVG 图表</div>';
+                } else {
+                    status.innerHTML += '<div class="error">❌ 未生成 SVG 图表</div>';
+                }
+            }, 1000);
+
+        } catch (error) {
+            status.innerHTML += '<div class="error">❌ 错误: ' + error.message + '</div>';
+            console.error('Error:', error);
+        }
+    </script>
+</body>
+</html>
