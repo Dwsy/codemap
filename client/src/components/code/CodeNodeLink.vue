@@ -55,7 +55,12 @@ const fileName = computed(() => {
 })
 
 async function handleClick() {
-  await codeViewerStore.openFile(props.codeNode.file, props.codeNode.line)
+  console.log('CodeNodeLink clicked:', { file: props.codeNode.file, line: props.codeNode.line })
+  try {
+    await codeViewerStore.openFile(props.codeNode.file, props.codeNode.line)
+  } catch (error) {
+    console.error('Failed to open file:', error)
+  }
 }
 </script>
 

@@ -1,10 +1,5 @@
 import { ref, onUnmounted } from 'vue'
-
-declare global {
-  interface Window {
-    mermaid?: any
-  }
-}
+import mermaid from 'mermaid'
 
 interface MermaidConfig {
   startOnLoad?: boolean
@@ -21,39 +16,21 @@ export function useMermaid(config: MermaidConfig = {}) {
   const translateX = ref(0)
   const translateY = ref(0)
 
-  let mermaidInstance: any = null
-
   const defaultConfig: MermaidConfig = {
     startOnLoad: false,
     theme: 'default',
     securityLevel: 'loose',
     logLevel: 'error',
-    flowchart: {
-      useMaxWidth: true,
-      htmlLabels: true,
-      curve: 'basis'
-    },
     ...config
   }
 
   async function loadMermaid() {
-    if (typeof window !== 'undefined' && !window.mermaid) {
+    if (!isReady.value) {
       isLoading.value = true
       error.value = null
 
       try {
-        const script = document.createElement('script')
-        script.src = 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js'
-        script.async = true
-
-        await new Promise((resolve, reject) => {
-          script.onload = resolve
-          script.onerror = reject
-          document.head.appendChild(script)
-        })
-
-        mermaidInstance = window.mermaid
-        await mermaidInstance.initialize(defaultConfig)
+        mermaid.initialize(defaultConfig)
         isReady.value = true
       } catch (e) {
         error.value = e instanceof Error ? e.message : 'Failed to load Mermaid'
@@ -61,9 +38,6 @@ export function useMermaid(config: MermaidConfig = {}) {
       } finally {
         isLoading.value = false
       }
-    } else if (window.mermaid) {
-      mermaidInstance = window.mermaid
-      isReady.value = true
     }
   }
 
@@ -72,13 +46,9 @@ export function useMermaid(config: MermaidConfig = {}) {
       await loadMermaid()
     }
 
-    if (!mermaidInstance) {
-      throw new Error('Mermaid not initialized')
-    }
-
     try {
       const uniqueId = `mermaid-${elementId}-${Date.now()}`
-      const { svg } = await mermaidInstance.render(uniqueId, definition)
+      const { svg } = await mermaid.render(uniqueId, definition)
       return svg
     } catch (e) {
       console.error('Mermaid render error:', e)

@@ -88,17 +88,8 @@
         </div>
       </div>
 
-      <div v-else-if="currentFile" class="flex-1 overflow-hidden">
-        <Editor
-          ref="editorRef"
-          :model-value="currentFile.content"
-          :language="language"
-          :options="editorOptions"
-          :theme="theme"
-          height="100%"
-          @mount="handleEditorMount"
-          @update:model-value="handleEditorChange"
-        />
+      <div v-else-if="currentFile" class="flex-1 overflow-hidden relative">
+        <div ref="editorContainer" class="h-full w-full min-h-0 absolute inset-0"></div>
       </div>
 
       <div
@@ -112,8 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch, ref, onMounted } from 'vue'
-import { Editor } from '@guolao/vue-monaco-editor'
+import { computed, watch, ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { useCodeViewerStore } from '@/stores/codeViewer'
 import { useEditorStore } from '@/stores/editor'
 import { useUiStore } from '@/stores/ui'
@@ -124,8 +114,13 @@ import ThemeSwitcher from './ThemeSwitcher.vue'
 const codeViewerStore = useCodeViewerStore()
 const editorStore = useEditorStore()
 const uiStore = useUiStore()
-const { getLanguageFromPath, createEditorOptions } = useMonacoEditor()
+const { getLanguageFromPath, createEditorOptions, createDecorations, initMonaco } = useMonacoEditor()
 const { currentTheme, initThemes } = useMonacoTheme()
+
+const editorContainer = ref<HTMLElement>()
+let editorInstance: any = null
+const currentDecorations = ref<string[]>([])
+const resizeObserver = ref<ResizeObserver | null>(null)
 
 const isOpen = computed(() => codeViewerStore.isOpen)
 const currentFile = computed(() => codeViewerStore.currentFile)
@@ -133,7 +128,6 @@ const currentLine = computed(() => codeViewerStore.currentLine)
 const loading = computed(() => codeViewerStore.loading)
 const error = computed(() => codeViewerStore.error)
 
-const theme = computed(() => editorStore.state.theme)
 const fileName = computed(() => {
   if (!currentFile.value) return ''
   const parts = currentFile.value.path.split('/')
@@ -148,33 +142,187 @@ const language = computed(() => {
 const editorOptions = computed(() => {
   return createEditorOptions({
     language: language.value,
-    theme: theme.value,
+    theme: currentTheme.value.id,
     readOnly: true,
     ...editorStore.getEditorOptions()
   })
 })
 
-onMounted(() => {
-  initThemes()
+onMounted(async () => {
+  try {
+    console.log('CodePanel mounted')
+    console.log('Initial state:', {
+      isOpen: isOpen.value,
+      currentFile: currentFile.value,
+      hasContainer: !!editorContainer.value
+    })
+    
+    console.log('Initializing Monaco...')
+    await initMonaco()
+    initThemes()
+    console.log('Monaco Editor initialized successfully')
+    
+    console.log('State after init:', {
+      isOpen: isOpen.value,
+      currentFile: currentFile.value,
+      hasContainer: !!editorContainer.value
+    })
+    
+    // Setup resize observer
+    resizeObserver.value = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        console.log('Container resized:', {
+          width: entry.contentRect.width,
+          height: entry.contentRect.height
+        })
+        if (editorInstance) {
+          editorInstance.layout()
+        }
+      }
+    })
+    
+    if (editorContainer.value) {
+      resizeObserver.value.observe(editorContainer.value)
+    }
+  } catch (error) {
+    console.error('Failed to initialize Monaco:', error)
+  }
 })
 
-async function closePanel() {
-  codeViewerStore.closePanel()
-}
+watch(
+  () => [currentFile.value, isOpen.value],
+  async ([newFile, newIsOpen]) => {
+    console.log('Watch triggered:', { 
+      hasFile: !!newFile, 
+      isOpen: newIsOpen, 
+      hasContainer: !!editorContainer.value,
+      fileName: newFile?.path,
+      contentLength: newFile?.content?.length
+    })
+    
+    if (newIsOpen && newFile) {
+      console.log('Waiting for container...')
+      // Wait for DOM to be fully rendered
+      await nextTick()
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      if (!editorContainer.value) {
+        console.error('Container still not available')
+        return
+      }
+      
+      console.log('Creating editor...')
+      console.log('Editor container size:', {
+        width: editorContainer.value.clientWidth,
+        height: editorContainer.value.clientHeight,
+        offsetWidth: editorContainer.value.offsetWidth,
+        offsetHeight: editorContainer.value.offsetHeight
+      })
+      
+      if (editorInstance.value) {
+        editorInstance.value.dispose()
+        editorInstance.value = null
+      }
+      
+      try {
+        const monaco = await import('monaco-editor')
+        console.log('Monaco loaded, creating editor instance')
 
-function handleEditorChange(value: string) {
-  console.log('Editor value changed:', value)
-}
+        editorInstance = monaco.editor.create(
+          editorContainer.value,
+          editorOptions.value
+        )
+
+        console.log('Setting content, length:', newFile.content?.length)
+        editorInstance.setValue(newFile.content)
+
+        // Force layout update
+        editorInstance.layout()
+
+        if (currentLine.value) {
+          highlightLine(currentLine.value)
+        }
+
+        console.log('Editor created successfully')
+        console.log('Editor layout:', {
+          hasDomNode: !!editorInstance.getDomNode(),
+          domNodeSize: editorInstance.getDomNode() ? {
+            width: editorInstance.getDomNode()!.clientWidth,
+            height: editorInstance.getDomNode()!.clientHeight
+          } : 'null'
+        })
+      } catch (error) {
+        console.error('Failed to create editor:', error)
+      }
+    }
+  },
+  { immediate: true, deep: true }
+)
 
 watch(
   () => currentLine.value,
   (newLine) => {
-    if (newLine) {
-      console.log('Jumping to line:', newLine)
+    if (newLine && editorInstance) {
+      highlightLine(newLine)
     }
   },
   { immediate: true }
 )
+
+watch(
+  () => currentFile.value,
+  () => {
+    clearDecorations()
+  }
+)
+
+watch(
+  () => currentTheme.value.id,
+  (newTheme) => {
+    if (editorInstance) {
+      editorInstance.updateOptions({ theme: newTheme })
+    }
+  }
+)
+
+async function closePanel() {
+  clearDecorations()
+  if (editorInstance) {
+    editorInstance.dispose()
+    editorInstance = null
+  }
+  codeViewerStore.closePanel()
+}
+
+function clearDecorations() {
+  if (editorInstance && currentDecorations.value.length > 0) {
+    editorInstance.deltaDecorations(currentDecorations.value, [])
+    currentDecorations.value = []
+  }
+}
+
+function highlightLine(line: number) {
+  if (!editorInstance) {
+    return
+  }
+
+  clearDecorations()
+
+  const decorations = createDecorations(line)
+  currentDecorations.value = editorInstance.deltaDecorations([], decorations)
+
+  editorInstance.revealLineInCenter(line)
+}
+
+onUnmounted(() => {
+  clearDecorations()
+  if (editorInstance) {
+    editorInstance.dispose()
+  }
+  if (resizeObserver.value) {
+    resizeObserver.value.disconnect()
+  }
+})
 </script>
 
 <style scoped>

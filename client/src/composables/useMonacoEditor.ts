@@ -1,16 +1,9 @@
 import { ref, onUnmounted } from 'vue'
-import { loader } from '@guolao/vue-monaco-editor'
-import type * as Monaco from 'monaco-editor'
-
-declare global {
-  interface Window {
-    monaco?: any
-  }
-}
+import { configureMonacoWorkers } from '@/config/monacoWorkers'
 
 export interface MonacoEditorConfig {
   language?: string
-  theme?: 'vs' | 'vs-dark' | 'hc-black'
+  theme?: string
   readOnly?: boolean
   minimap?: boolean
   lineNumbers?: 'on' | 'off' | 'relative' | 'interval'
@@ -27,22 +20,22 @@ export function useMonacoEditor() {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
-  loader.config({
-    paths: {
-      vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.50.0/min/vs'
-    }
-  })
-
   async function initMonaco() {
     if (!isReady.value) {
       isLoading.value = true
       error.value = null
 
       try {
-        await loader.init()
+        // Configure workers first
+        configureMonacoWorkers()
+
+        // Then import monaco
+        await import('monaco-editor')
         isReady.value = true
+        console.log('Monaco Editor is ready')
       } catch (e) {
         error.value = e instanceof Error ? e.message : 'Failed to initialize Monaco Editor'
+        console.error('Monaco initialization error:', error.value)
         throw e
       } finally {
         isLoading.value = false
@@ -74,8 +67,8 @@ export function useMonacoEditor() {
       swift: 'swift',
       cpp: 'cpp',
       c: 'c',
+      hpp: 'cpp',
       h: 'c',
-     hpp: 'cpp',
       cs: 'csharp',
       php: 'php',
       sh: 'shell',
@@ -89,7 +82,7 @@ export function useMonacoEditor() {
     return languageMap[ext || ''] || 'plaintext'
   }
 
-  function createEditorOptions(config: MonacoEditorConfig = {}): Monaco.editor.IStandaloneEditorConstructionOptions {
+  function createEditorOptions(config: MonacoEditorConfig = {}): monaco.editor.IStandaloneEditorConstructionOptions {
     return {
       value: '',
       language: config.language || 'typescript',
@@ -130,7 +123,7 @@ export function useMonacoEditor() {
     }
   }
 
-  function createDecorations(line: number): Monaco.editor.IModelDeltaDecoration[] {
+  function createDecorations(line: number): monaco.editor.IModelDeltaDecoration[] {
     return [
       {
         range: {
@@ -148,13 +141,6 @@ export function useMonacoEditor() {
     ]
   }
 
-  async function loadMonaco(): Promise<any> {
-    if (!isReady.value) {
-      await initMonaco()
-    }
-    return { monaco: loader.__getMonacoInstance?.() || window.monaco }
-  }
-
   function dispose() {
     isReady.value = false
     error.value = null
@@ -169,7 +155,6 @@ export function useMonacoEditor() {
     isLoading,
     error,
     initMonaco,
-    loadMonaco,
     getLanguageFromPath,
     createEditorOptions,
     createDecorations,

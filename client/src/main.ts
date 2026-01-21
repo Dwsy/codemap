@@ -4,6 +4,10 @@ import { router } from './router'
 import App from './App.vue'
 import './styles/main.css'
 
+// Configure Monaco workers before any Monaco instance is created
+import { configureMonacoWorkers } from './config/monacoWorkers'
+configureMonacoWorkers()
+
 const app = createApp(App)
 
 // Vapor Mode（可选，Vue 3.6+）

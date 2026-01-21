@@ -175,7 +175,7 @@
       </section>
 
       <section id="view-traces" class="min-h-full">
-        <TracesView :traces="codemap.traces" />
+        <TracesView :traces="codemap.traces" :project-path="codemap.projectPath" />
       </section>
     </div>
 

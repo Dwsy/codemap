@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue'
-import type * as monaco from 'monaco-editor'
+import * as monaco from 'monaco-editor'
 
 export interface DiffOptions {
   renderSideBySide: boolean
@@ -31,7 +31,7 @@ export function useCodeDiff() {
     let removed = 0
     let changed = 0
 
-    lineChanges.forEach(change => {
+    lineChanges.forEach((change: any) => {
       if (change.originalEndLineNumber === 0) {
         added += (change.modifiedEndLineNumber - change.modifiedStartLineNumber + 1)
       } else if (change.modifiedEndLineNumber === 0) {
@@ -111,22 +111,6 @@ export function useCodeDiff() {
     }
   }
 
-  function getNextDiffAction(): () => void {
-    return () => {
-      if (diffEditorRef.value) {
-        diffEditorRef.value.nextDiff()
-      }
-    }
-  }
-
-  function getPreviousDiffAction(): () => void {
-    return () => {
-      if (diffEditorRef.value) {
-        diffEditorRef.value.previousDiff()
-      }
-    }
-  }
-
   function closeDiff() {
     if (diffEditorRef.value) {
       const model = diffEditorRef.value.getModel()
@@ -165,8 +149,6 @@ export function useCodeDiff() {
     toggleSideBySide,
     updateOptions,
     resetOptions,
-    getNextDiffAction,
-    getPreviousDiffAction,
     closeDiff,
     copyOriginal,
     copyModified,

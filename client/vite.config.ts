@@ -29,6 +29,21 @@ export default defineConfig(({ mode }) => {
         }
       }
     },
+    optimizeDeps: {
+      include: [
+        'vue',
+        'vue-router',
+        'pinia',
+        'monaco-editor'
+      ],
+      exclude: [
+        'monaco-editor/esm/vs/language/json/json.worker',
+        'monaco-editor/esm/vs/language/css/css.worker',
+        'monaco-editor/esm/vs/language/html/html.worker',
+        'monaco-editor/esm/vs/language/typescript/ts.worker',
+        'monaco-editor/esm/vs/editor/editor.worker'
+      ]
+    },
     build: {
       target: 'esnext',
       rollupOptions: {
@@ -39,6 +54,9 @@ export default defineConfig(({ mode }) => {
                 return 'vue-vendor'
               }
               if (id.includes('monaco-editor')) {
+                if (id.includes('worker')) {
+                  return 'monaco-worker'
+                }
                 return 'monaco'
               }
               if (id.includes('markdown-it') || id.includes('mermaid') || id.includes('infographic')) {
@@ -55,19 +73,10 @@ export default defineConfig(({ mode }) => {
           assetFileNames: 'assets/[ext]/[name]-[hash].[ext]'
         }
       },
-      chunkSizeWarningLimit: 1000,
-      minify: 'terser',
-      terserOptions: {
-        compress: {
-          drop_console: true,
-          drop_debugger: true,
-          pure_funcs: ['console.log']
-        }
-      }
+      chunkSizeWarningLimit: 1000
     },
-    optimizeDeps: {
-      exclude: ['monaco-editor'],
-      include: ['vue', 'vue-router', 'pinia']
+    worker: {
+      format: 'es'
     }
   }
 })

@@ -27,6 +27,16 @@ export interface Trace {
   traceGuide?: string
   children?: Trace[]
   codeNode?: CodeNode
+  locations?: TraceLocation[]
+}
+
+export interface TraceLocation {
+  id: string
+  path: string
+  lineNumber: number
+  lineContent: string
+  title: string
+  description: string
 }
 
 export interface CodeNode {

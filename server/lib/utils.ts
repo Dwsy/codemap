@@ -8,7 +8,23 @@ export function escapeHtml(text: string): string {
 
 export function detectLanguage(path: string): string {
   const ext = path.split('.').pop()?.toLowerCase();
-  const map: Record<string, string> = { ts: 'typescript', tsx: 'typescript', js: 'javascript', jsx: 'javascript', py: 'python', rs: 'rust', go: 'go' };
+  const map: Record<string, string> = {
+    ts: 'typescript',
+    tsx: 'typescript',
+    js: 'javascript',
+    jsx: 'javascript',
+    vue: 'vue',
+    py: 'python',
+    rs: 'rust',
+    go: 'go',
+    html: 'html',
+    css: 'css',
+    scss: 'scss',
+    json: 'json',
+    md: 'markdown',
+    yaml: 'yaml',
+    yml: 'yaml'
+  };
   return map[ext || ''] || 'plaintext';
 }
 

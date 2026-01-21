@@ -57,7 +57,7 @@ const routes: RouteRecordRaw[] = [
 export const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, _from, savedPosition) {
     if (savedPosition) {
       return savedPosition
     } else {
@@ -74,7 +74,7 @@ function preloadRoute(name: string) {
   const route = routes.find(r => r.name === name)
   if (route && typeof route.component === 'function') {
     preloadedRoutes.add(name)
-    route.component()
+    ;(route.component as () => Promise<any>)()
   }
 }
 
@@ -92,19 +92,19 @@ function preloadRelatedRoutes(to: any) {
   }
 }
 
-router.beforeEach((to, from, next) => {
-  document.title = `${to.meta.title || 'CodeMap'} - CodeMap`
+router.beforeEach((_to, _from, next) => {
+    document.title = 'CodeMap'
 
-  if (to.matched.some(record => record.meta.requiresAuth)) {
-    next()
-  } else {
-    next()
-  }
-})
+    if (_to.matched.some(record => record.meta.requiresAuth)) {
+      next()
+    } else {
+      next()
+    }
+  })
 
-router.afterEach((to, from) => {
-  console.log(`Navigated from ${from.name} to ${to.name}`)
-  preloadRelatedRoutes(to)
-})
+  router.afterEach((to, _from) => {
+    console.log(`Navigated to ${String(to.name)}`)
+    preloadRelatedRoutes(to)
+  })
 
 export { preloadRoute }

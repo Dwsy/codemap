@@ -77,6 +77,7 @@
           v-for="trace in traces"
           :key="trace.id"
           :trace="trace"
+          :project-path="projectPath"
           @toggle="handleToggle"
         />
       </div>
@@ -88,26 +89,18 @@
 import { ref, computed, provide, watch } from 'vue'
 import TraceItem from './TraceItem.vue'
 
-interface CodeNodeLocation {
-  id: string
-  path: string
-  lineNumber: number
-  lineContent: string
-  title: string
-  description: string
-}
-
 interface Trace {
   id: string
-  title: string
+  name: string
   description?: string
   traceTextDiagram?: string
   traceGuide?: string
-  locations?: CodeNodeLocation[]
+  locations?: any[]
 }
 
 interface Props {
   traces?: Trace[]
+  projectPath?: string
 }
 
 const props = defineProps<Props>()

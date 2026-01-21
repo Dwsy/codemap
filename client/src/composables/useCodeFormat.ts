@@ -46,13 +46,13 @@ export function useCodeFormat() {
     return languageMap[ext] || 'plaintext'
   }
 
-  async function formatWithMonaco(code: string, language: string, model: any): Promise<string> {
+  async function formatWithMonaco(code: string, _language: string, editor: any): Promise<string> {
     try {
-      const result = await monaco.editor.format(model.getFullModelRange(), {
-        insertSpaces: !options.value.useTabs,
-        tabSize: options.value.tabWidth
-      })
-      return model.applyEdits(result)
+      const actions = await editor.getAction('editor.action.formatDocument')
+      if (actions) {
+        actions.run()
+      }
+      return editor.getValue()
     } catch (error) {
       console.error('Monaco format error:', error)
       return code

@@ -1,5 +1,4 @@
 import { ref, computed } from 'vue'
-import type * as monaco from 'monaco-editor'
 
 interface SearchResult {
   file: string
@@ -70,7 +69,7 @@ export function useCodeSearch() {
       const lines = content.split('\n')
       const fileResults: SearchResult[] = []
 
-      lines.forEach((line, index) => {
+      lines.forEach((line: string, index: number) => {
         const matches = line.matchAll(pattern)
         for (const match of matches) {
           if (match.index !== undefined) {

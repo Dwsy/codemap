@@ -1,10 +1,8 @@
-import type * as monaco from 'monaco-editor'
-
 export interface MonacoTheme {
   id: string
   name: string
   type: 'dark' | 'light'
-  data: monaco.editor.IStandaloneThemeData
+  data: any
 }
 
 export const monacoThemes: MonacoTheme[] = [

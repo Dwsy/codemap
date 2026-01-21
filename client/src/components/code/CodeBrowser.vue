@@ -109,7 +109,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useCodeViewerStore } from '@/stores/codeViewer'
 
 interface FileTreeItem {
@@ -118,6 +118,12 @@ interface FileTreeItem {
   type: 'dir' | 'file'
   children?: FileTreeItem[]
 }
+
+interface Props {
+  projectPath?: string
+}
+
+const props = defineProps<Props>()
 
 const emit = defineEmits<{
   close: []
@@ -128,12 +134,18 @@ const loading = ref(false)
 const error = ref<string | null>(null)
 const fileTree = ref<FileTreeItem[]>([])
 
-async function loadFileTree() {
+async function loadFileTree(path?: string) {
   loading.value = true
   error.value = null
 
   try {
-    const response = await fetch('/api/v1/files/tree')
+    const targetPath = path || props.projectPath
+    if (!targetPath) {
+      error.value = 'No project path provided'
+      return
+    }
+
+    const response = await fetch(`/api/v1/files/tree?path=${encodeURIComponent(targetPath)}`)
     if (!response.ok) {
       throw new Error('Failed to load file tree')
     }
@@ -156,8 +168,19 @@ function closeBrowser() {
   emit('close')
 }
 
+watch(
+  () => props.projectPath,
+  (newPath) => {
+    if (newPath) {
+      loadFileTree(newPath)
+    }
+  }
+)
+
 onMounted(() => {
-  loadFileTree()
+  if (props.projectPath) {
+    loadFileTree(props.projectPath)
+  }
 })
 </script>
 
